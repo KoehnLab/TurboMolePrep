@@ -139,6 +139,24 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
     # Note: Using eht automatically terminates the occ menu
 
 
+def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None):
+    parts = instruction.split(">")
+    parts = [x.strip() for x in parts]
+    for currentPart in parts:
+        process.sendline(currentPart.format(value))
+
+    # Ensure we arrive back in the main menu
+    for _ in range(max(0, len(parts) - 1)):
+        # We're relying on being able to get a menu back up by pressing enter
+        process.sendline("")
+
+
+named_calc_params = {
+    "functional": ["dft > on", "dft > func {}"],
+    "dft_grid": ["dft > grid > {}"],
+}
+
+
 def configuere_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"GENERAL MENU : SELECT YOUR TOPIC"
     end_of_prompt = r"\* or q\s*: END OF DEFINE SESSION"
@@ -155,21 +173,22 @@ def configuere_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     if len(calc_params) == 0:
         raise RuntimeError("calculation object must not be empty")
 
+    for option in named_calc_params:
+        if option in calc_params:
+            value = calc_params[option]
+            for instruction in named_calc_params[option]:
+                set_generic_calc_param(process, instruction, value)
+
+                process.expect(headline)
+                process.expect(end_of_prompt)
+
     # Generic option instructions to cover all cases for which we don't have pre-defined options
     # The syntax is a simple
     # first > second > third > value
     # where the different parts (separated by ">") will be entered one after another
     if "generic" in calc_params:
         for instruction in calc_params["generic"]:
-            parts = instruction.split(">")
-            parts = [x.strip() for x in parts]
-            for currentPart in parts:
-                process.sendline(currentPart)
-
-            # Ensure we arrive back in the main menu
-            for _ in range(max(0, len(parts) - 1)):
-                # We're relying on being able to get a menu back up by pressing enter
-                process.sendline("")
+            set_generic_calc_param(process, instruction)
 
             process.expect(headline)
             process.expect(end_of_prompt)

@@ -100,6 +100,19 @@ Example:
 
 This option group defines parameters for the calculation that shall be performed.
 
+| **Name** | **Description** | **Type** |
+| -------- | --------------- | -------- |
+| `dft_grid` | Set the grid to be used in DFT. Does **not** turn on DFT. | `String` or `Integer` |
+| `functional` | Specify DFT functional and turn on DFT | `String` |
+
+Example:
+```json
+"calculation": {
+    "functional": "pbe0"
+}
+```
+
+
 ### generic
 
 This sub-group contains generic specification on what to enter in `define`'s final configuration menu (where the parameters for the calculation itself
