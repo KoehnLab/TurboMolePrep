@@ -91,8 +91,8 @@ Example:
 ```json
 "basis_set": {
     "C": "def2-SVP",
-	"Cu": "def2-TZVPP",
-	"3,4": "dz"
+    "Cu": "def2-TZVPP",
+    "3,4": "dz"
 }
 ```
 
@@ -124,7 +124,7 @@ Example:
 ```json
 "generic": [
     "scf > conv > 8",
-	"dsp > d4"
+    "dsp > d4"
 ]
 ```
 
