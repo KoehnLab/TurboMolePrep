@@ -21,7 +21,7 @@ jobs:
       shell: bash
 
     - name: Verify dependencies complete
-      run: python3 prep_turbomole_calc
+      run: python3 prep_turbomole_calc.py
       shell: bash
 
     - name: Type checking
