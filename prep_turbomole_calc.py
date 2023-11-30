@@ -212,8 +212,17 @@ def main():
         default=10,
         type=int,
     )
+    parser.add_argument(
+        "--dont-execute",
+        help=argparse.SUPPRESS,
+        default=False,
+        action="store_true",
+    )
 
     args = parser.parse_args()
+
+    if args.dont_execute:
+        return
 
     with open(args.parameter, "r") as param_file:
         parameter = json.load(param_file)
