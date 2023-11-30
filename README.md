@@ -1,9 +1,9 @@
 # TurboMolePrep
 
-TurboMole ships with the `define` utility that can be used to set up calculations interactively. While this can be nice in certain cases, it can
-quickly become somewhat cumbersome if routine calculations have to be set up. Or if one wishes to use (almost) the same parameters in various
-different calculations. In the latter case, besides being time-consuming, one can make errors leading to more parameters being different in the
-calculations than originally anticipated.
+[TurboMole](https://www.turbomole.org/) ships with the `define` utility that can be used to set up calculations interactively. While this can be nice
+in certain cases, it can quickly become somewhat cumbersome if routine calculations have to be set up. Or if one wishes to use (almost) the same
+parameters in various different calculations. In the latter case, besides being time-consuming, one can make errors leading to more parameters being
+different in the calculations than originally anticipated.
 
 In such cases, it would be really handy, if TurboMole had a simple input file in which users could input their parameters which will always lead to
 the same calculation setup. Often people end up helping themselves by automating the input for the `define` program by using something like
