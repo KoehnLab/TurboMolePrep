@@ -152,8 +152,11 @@ def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None)
 
 
 named_calc_params = {
-    "functional": ["dft > on", "dft > func {}"],
     "dft_grid": ["dft > grid > {}"],
+    "dispersion_correction": ["dsp > {}"],
+    "functional": ["dft > on", "dft > func {}"],
+    "max_iterations": ["scf > iter > {}"],
+    "x2c": ["scf > x2c > {}"],
 }
 
 
@@ -176,6 +179,10 @@ def configuere_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     for option in named_calc_params:
         if option in calc_params:
             value = calc_params[option]
+
+            if type(value) == bool:
+                value = "y" if value else "n"
+
             for instruction in named_calc_params[option]:
                 set_generic_calc_param(process, instruction, value)
 
@@ -218,7 +225,7 @@ def main():
         help="Path to the parameter file",
         metavar="PATH",
         default="calculation_parameter.json",
-        nargs="?"
+        nargs="?",
     )
     parser.add_argument(
         "--debug",

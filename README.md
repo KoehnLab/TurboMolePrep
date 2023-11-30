@@ -65,7 +65,7 @@ These options are provided as simple key-value pairs on the first level in the J
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
 | `charge` | The charge of the system | `Integer` | `0` |
-| `detect_symmetry` |  Whether to let TurboMole autodetect the system's symmetry | `Booolean` | `true` |
+| `detect_symmetry` |  Whether to let TurboMole autodetect the system's symmetry | `Boolean` | `true` |
 | `geometry` | Specifies the path to the file that contains the geometry of the system to be calculated | `String` | - |
 | `title`  | Sets the title of the calculation | `String` | No title |
 | `use_ecp` | Whether any ECPs shall be used. If not, the script tries to remove all assigned ECPs (but sometimes TurboMole can be stubborn about this) | `Boolean` | `true` |
@@ -103,7 +103,10 @@ This option group defines parameters for the calculation that shall be performed
 | **Name** | **Description** | **Type** |
 | -------- | --------------- | -------- |
 | `dft_grid` | Set the grid to be used in DFT. Does **not** turn on DFT. | `String` or `Integer` |
+| `dispersion_correction` | What disperson correction method to use | `String` |
 | `functional` | Specify DFT functional and turn on DFT | `String` |
+| `max_iterations` | Sets the maximum SCF iterations | `Integer` |
+| `x2c` | Enables or disables X2C | `Boolean` |
 
 Example:
 ```json
