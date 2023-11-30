@@ -71,7 +71,7 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
 
         if group != "all" and group.isalpha() and len(group) <= 2:
             # We assume this is an element label -> wrap in quotes
-            group = '"{}"'.format(group)
+            group = '"{}"'.format(group.lower())
 
         process.sendline("b {} {}".format(group, basis_set))
         idx = process.expect([basis_set_not_found, end_of_prompt])
