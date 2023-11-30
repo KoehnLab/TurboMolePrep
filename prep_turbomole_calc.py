@@ -214,10 +214,11 @@ def main():
         description="Run define with a set of pre-defined parameters in order to prepare a TurboMole computation"
     )
     parser.add_argument(
-        "--parameter",
+        "parameter",
         help="Path to the parameter file",
         metavar="PATH",
         default="calculation_parameter.json",
+        nargs="?"
     )
     parser.add_argument(
         "--debug",
