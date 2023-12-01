@@ -111,6 +111,7 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
     charge_prompt = r"ENTER THE MOLECULAR CHARGE.+\r\n"
     occupation_prompt = r"DO YOU ACCEPT THIS OCCUPATION\s*\?"
     nat_orb_prompt = r"DO YOU REALLY WANT TO WRITE OUT NATURAL ORBITALS\s\?.+\r\n"
+    next_menu_headline = r"GENERAL MENU : SELECT YOUR TOPIC"
 
     process.expect(headline)
     process.expect(end_of_prompt)
@@ -120,7 +121,13 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
     cont = True
     while cont:
         idx = process.expect(
-            [default_prompt, charge_prompt, occupation_prompt, nat_orb_prompt]
+            [
+                default_prompt,
+                charge_prompt,
+                occupation_prompt,
+                nat_orb_prompt,
+                next_menu_headline,
+            ]
         )
         if idx == 0:
             # Always accept defaults
@@ -134,6 +141,10 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
             process.sendline(
                 "{}".format("y" if params.get("write_natural_orbitals", False) else "n")
             )
+        elif idx == 4:
+            # We ended up in the next menu -> press enter to make the menu "re-render"
+            # such that the following code can detect it properly
+            process.sendline("")
             cont = False
 
     # Note: Using eht automatically terminates the occ menu
