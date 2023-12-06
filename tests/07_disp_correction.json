@@ -1,0 +1,6 @@
+{
+	"geometry": "geometry.xyz",
+	"calculation": {
+		"dispersion_correction": "d4"
+	}
+}
