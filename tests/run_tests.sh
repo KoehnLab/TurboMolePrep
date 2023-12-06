@@ -47,7 +47,7 @@ function perform_test {
 	# Execute script
 	python3 "$script" "$input"
 
-	local control_file="${workdir}/control"
+	local control_file="control"
 
 	if [[ ! -f "$control_file" ]]; then
 		error_msg "No control file generated (expected it at '$control_file')"
@@ -56,17 +56,23 @@ function perform_test {
 
 	readarray -t lines < "$expectations"
 	for current in "${lines[@]}"; do
+		search_in="$control_file"
+		if [[ "$current" =~ ^(.+)\ in\ (.+)$ ]]; then
+			current="${BASH_REMATCH[1]}"
+			search_in="${BASH_REMATCH[2]}"
+		fi
+
 		if [[ "$current" = !* ]]; then
 			# Must NOT find
 			# Remove leading exclamation mark
 			current="${current:1}"
-			if grep "$current" "$control_file" > /dev/null; then
-				error_msg "Expected to NOT match '$current' in control file, but did"
+			if grep "$current" "$search_in" > /dev/null; then
+				error_msg "Expected to NOT match '$current' in '$search_in', but did"
 			fi
 		else
 			# Must find
-			if ! grep "$current" "$control_file" > /dev/null; then
-				error_msg "Expected to match '$current' in control file, but didn't"
+			if ! grep "$current" "$search_in" > /dev/null; then
+				error_msg "Expected to match '$current' in '$search_in', but didn't"
 			fi
 		fi
 	done
