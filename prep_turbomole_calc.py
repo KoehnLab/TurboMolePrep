@@ -180,7 +180,7 @@ named_calc_params = {
     "dft_grid": ["dft > grid > {}"],
     "dispersion_correction": ["dsp > {}"],
     "functional": ["dft > on", "dft > func {}"],
-    "max_iterations": ["scf > iter > {}"],
+    "max_scf_iterations": ["scf > iter > {}"],
     "x2c": ["scf > x2c > {}"],
 }
 

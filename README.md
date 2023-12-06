@@ -105,7 +105,7 @@ This option group defines parameters for the calculation that shall be performed
 | `dft_grid` | Set the grid to be used in DFT. Does **not** turn on DFT. | `String` or `Integer` |
 | `dispersion_correction` | What disperson correction method to use | `String` |
 | `functional` | Specify DFT functional and turn on DFT | `String` |
-| `max_iterations` | Sets the maximum SCF iterations | `Integer` |
+| `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` |
 | `x2c` | Enables or disables X2C | `Boolean` |
 
 Example:
