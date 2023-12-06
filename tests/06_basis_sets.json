@@ -1,0 +1,8 @@
+{
+	"geometry": "geometry.xyz",
+	"basis_set": {
+		"all": "def2-TZVPP",
+		"H": "def2-SVP",
+		"cL": "def2-QZVPP"
+	}
+}

@@ -1,0 +1,4 @@
+^$basis[[:space:]]*file=basis
+^o def2-TZVPP in basis
+^h def2-SVP in basis
+^cl def2-QZVPP in basis
