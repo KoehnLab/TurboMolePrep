@@ -7,6 +7,7 @@ from typing import Dict, Any
 import argparse
 import json
 import sys
+import subprocess
 import os
 
 
@@ -229,6 +230,27 @@ def run_define(params: Dict[str, Any], debug: bool = False, timeout: int = 10):
     configuere_calc_params(process, params)
 
 
+def handle_geometry_conversion(geom_path: str, base_path: str) -> str:
+    if not os.path.isabs(geom_path):
+        geom_path = os.path.join(base_path, geom_path)
+
+    _, file_ext = os.path.splitext(geom_path)
+
+    if file_ext.lower() == ".xyz":
+        # Convert XYZ to TurboMole format
+        coord_file = open("coord", "w")
+        subprocess.run(["x2t", geom_path], stdout=coord_file).check_returncode()
+
+        return "coord"
+    elif not len(file_ext) == 0:
+        raise RuntimeError(
+            "Can only convert XYZ geometries to TurboMole format, but got '%s'"
+            % file_ext
+        )
+
+    return geom_path
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run define with a set of pre-defined parameters in order to prepare a TurboMole computation"
@@ -278,6 +300,11 @@ def main():
         param_dir = "."
     if args.cd:
         os.chdir(param_dir)
+
+    if not "geometry" in parameter:
+        raise RuntimeError("'geometry' field is mandatory!")
+
+    parameter["geometry"] = handle_geometry_conversion(parameter["geometry"], param_dir)
 
     run_define(parameter, debug=args.debug, timeout=args.timeout)
 

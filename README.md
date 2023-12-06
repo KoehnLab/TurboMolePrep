@@ -27,7 +27,7 @@ will pass the information down to `define` in the necessary format. A sample set
 ```json
 {
     "title": "My awesome TurboMole calculation",
-    "geometry": "coord",
+    "geometry": "my_geom.xyz",
     "use_internal_coords": true,
     "detect_symmetry": true,
     "basis_set": {
@@ -66,7 +66,7 @@ These options are provided as simple key-value pairs on the first level in the J
 | -------- | --------------- | -------- | ----------- |
 | `charge` | The charge of the system | `Integer` | `0` |
 | `detect_symmetry` |  Whether to let TurboMole autodetect the system's symmetry | `Boolean` | `true` |
-| `geometry` | Specifies the path to the file that contains the geometry of the system to be calculated | `String` | - |
+| `geometry` | Specifies the path to the file that contains the geometry of the system to be calculated. Automatic conversion from XYZ files to TurboMole format is supported. Relative paths are relative to the JSON file's directory. | `String` | - |
 | `title`  | Sets the title of the calculation | `String` | No title |
 | `use_ecp` | Whether any ECPs shall be used. If not, the script tries to remove all assigned ECPs (but sometimes TurboMole can be stubborn about this) | `Boolean` | `true` |
 | `use_internal_coords` | Whether to generate and use internal, redundant coordinates for the molecule (very useful for geometry optimizations) | `Boolean` | `true` |
