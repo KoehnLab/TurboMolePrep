@@ -60,6 +60,7 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
         # If no basis set was specified by the user, use TM's defaults
         print("Using default basis set(s) as proposed by TurboMole")
         process.sendline("*")
+        return
 
     basis_info: Dict[str, Any] = params["basis_set"]
     if len(basis_info) == 0:
