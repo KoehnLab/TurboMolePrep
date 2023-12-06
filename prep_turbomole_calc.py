@@ -35,7 +35,7 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
 
     process.expect(end_of_prompt)
 
-    if params.get("use_redundant_coords", True):
+    if params.get("use_internal_coords", True):
         process.sendline("ired")
         process.expect(end_of_prompt)
     if params.get("detect_symmetry", True):

@@ -28,7 +28,7 @@ will pass the information down to `define` in the necessary format. A sample set
 {
     "title": "My awesome TurboMole calculation",
     "geometry": "coord",
-    "use_redundant_coords": true,
+    "use_internal_coords": true,
     "detect_symmetry": true,
     "basis_set": {
         "all": "def2-TZVPP"
@@ -69,7 +69,7 @@ These options are provided as simple key-value pairs on the first level in the J
 | `geometry` | Specifies the path to the file that contains the geometry of the system to be calculated | `String` | - |
 | `title`  | Sets the title of the calculation | `String` | No title |
 | `use_ecp` | Whether any ECPs shall be used. If not, the script tries to remove all assigned ECPs (but sometimes TurboMole can be stubborn about this) | `Boolean` | `true` |
-| `use_redundant_coords` | Whether to generate internal, redundant coordinates for the molecule (very useful for geometry optimizations) | `Boolean` | `true` |
+| `use_internal_coords` | Whether to generate and use internal, redundant coordinates for the molecule (very useful for geometry optimizations) | `Boolean` | `true` |
 | `write_natural_orbitals` | Whether to write out natural orbitals (after extended Hückel guess) | `Boolean` | `false` |
 
 
