@@ -61,6 +61,15 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
         process.sendline("no")
 
 
+def basis_set_group_sort_key(expr: str) -> str:
+    if expr.lower() == "all":
+        return "0_{}".format(expr)
+    elif expr[0].isalpha():
+        return "1_{}".format(expr)
+    else:
+        return "2_{}".format(expr)
+
+
 def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"ATOMIC ATTRIBUTE DEFINITION MENU\s*\(\s*#atoms=(\d+)\s*#bas=(\d+)\s*#ecp=(\d+)\s*\)"
     end_of_prompt = r"GOBACK=& \(TO GEOMETRY MENU !\)\r\n"
@@ -80,12 +89,20 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
         raise RuntimeError("'basis_set' object must not be empty!")
 
     # Specify basis sets
-    for group in basis_info:
+    # Always process from least specific group to most specific group
+    # That means (for us) "all" before element labels before element indices
+    groups = list(basis_info.keys())
+    groups.sort(key=basis_set_group_sort_key)
+
+    for group in groups:
         basis_set = basis_info[group]
+
+        if group.isalpha():
+            group = group.lower()
 
         if group != "all" and group.isalpha() and len(group) <= 2:
             # We assume this is an element label -> wrap in quotes
-            group = '"{}"'.format(group.lower())
+            group = '"{}"'.format(group)
 
         process.sendline("b {} {}".format(group, basis_set))
         idx = process.expect([basis_set_not_found, end_of_prompt])
