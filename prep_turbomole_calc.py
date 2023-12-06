@@ -7,6 +7,7 @@ from typing import Dict, Any
 import argparse
 import json
 import sys
+import os
 
 
 def setup(process: pexpect.spawn, params: Dict[str, Any]):
@@ -252,6 +253,12 @@ def main():
         type=int,
     )
     parser.add_argument(
+        "--cd",
+        help="Execute in the directory of the parameter file instead of the present working directory",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--dont-execute",
         help=argparse.SUPPRESS,
         default=False,
@@ -265,6 +272,12 @@ def main():
 
     with open(args.parameter, "r") as param_file:
         parameter = json.load(param_file)
+
+    param_dir: str = os.path.dirname(args.parameter)
+    if len(param_dir) == 0:
+        param_dir = "."
+    if args.cd:
+        os.chdir(param_dir)
 
     run_define(parameter, debug=args.debug, timeout=args.timeout)
 
