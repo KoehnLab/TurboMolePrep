@@ -22,6 +22,10 @@ def setup(process: pexpect.spawn, params: Dict[str, Any]):
 def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"SPECIFICATION OF MOLECULAR GEOMETRY \(\s*#ATOMS=(\d+)\s*SYMMETRY=([a-zA-Z_0-9]+)\s+\)"
     end_of_prompt = "OF THAT COMMAND MAY BE GIVEN"
+    internal_coord_prompt = (
+        r"IF YOU DO NOT WANT TO USE INTERNAL COORDINATES ENTER\s*no\r\n"
+    )
+
     process.expect(headline)
     process.expect(end_of_prompt)
     process.sendline("a {}".format(params["geometry"]))
@@ -37,6 +41,8 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
 
     process.expect(end_of_prompt)
 
+    use_interals = params.get("use_internal_coords", True)
+
     if params.get("use_internal_coords", True):
         process.sendline("ired")
         process.expect(end_of_prompt)
@@ -48,6 +54,11 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
         process.expect(end_of_prompt)
 
     process.sendline("*")
+
+    if not use_interals:
+        # Confirm that we indeed do not want internal coordinates
+        process.expect(internal_coord_prompt)
+        process.sendline("no")
 
 
 def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
