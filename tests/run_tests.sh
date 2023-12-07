@@ -68,11 +68,13 @@ function perform_test {
 			current="${current:1}"
 			if grep "$current" "$search_in" > /dev/null; then
 				error_msg "Expected to NOT match '$current' in '$search_in', but did"
+				exit 5
 			fi
 		else
 			# Must find
 			if ! grep "$current" "$search_in" > /dev/null; then
 				error_msg "Expected to match '$current' in '$search_in', but didn't"
+				exit 5
 			fi
 		fi
 	done
