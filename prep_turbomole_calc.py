@@ -319,7 +319,7 @@ named_calc_params = {
 }
 
 
-def configuere_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
+def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"GENERAL MENU : SELECT YOUR TOPIC"
     end_of_prompt = r"\* or q\s*: END OF DEFINE SESSION"
 
@@ -372,7 +372,7 @@ def run_define(params: Dict[str, Any], debug: bool = False, timeout: int = 10):
     configure_geometry(process, params)
     configure_basis_set(process, params)
     configure_occupation(process, params)
-    configuere_calc_params(process, params)
+    configure_calc_params(process, params)
 
 
 def handle_geometry_conversion(geom_path: str, base_path: str) -> str:
