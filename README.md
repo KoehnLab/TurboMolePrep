@@ -102,7 +102,7 @@ This option group defines parameters for the calculation that shall be performed
 
 | **Name** | **Description** | **Type** |
 | -------- | --------------- | -------- |
-| `dft` | Turns on DFT with the given parameters. If the value is a string, then that will be used as the name of the functional | `String` or sub-object |
+| `dft` | Turns on DFT with the given parameters. If the value is a string, then that will be used as the name of the functional | `String` or sub-object (see below) |
 | `dispersion_correction` | What disperson correction method to use | `String` |
 | `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` |
 | `x2c` | Enables or disables X2C | `Boolean` |
@@ -114,11 +114,11 @@ Example:
 }
 ```
 
-#### dft sub-object
+#### dft options
 
 The argument of the `dft` option can be a nested JSON object, which can have the following fields
-| **Name | **Description** | **Type** |
-| ------ | --------------- | -------- |
+| **Name** | **Description** | **Type** |
+| -------- | --------------- | -------- |
 | `functional` | Specifies the functional to use | `String` |
 | `grid` | Specifies the integration grid that shall be used | `String` or `Integer` |
 
