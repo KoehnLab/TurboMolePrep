@@ -2,13 +2,130 @@
 
 import pexpect
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import argparse
 import json
 import sys
 import subprocess
 import os
+
+default_key = "-DeFaUlT-"
+array_type_key = "-ArRaYtYpE-"
+
+param_types = {
+    "charge": int,
+    "detect_symmetry": bool,
+    "geometry": str,
+    "title": str,
+    "use_ecp": bool,
+    "use_internal_coords": bool,
+    "write_natural_orbitals": bool,
+    "basis_set": [str, {default_key: str}],
+    "calculation": {
+        "dft": [str, {"functional": str, "grid": [str, int]}],
+        "dispersion_correction": str,
+        "max_scf_iterations": int,
+        "x2c": [bool, {"dlu": bool}],
+        "generic": {array_type_key: str},
+    },
+}
+
+
+def validate_parameter(
+    params: Dict[str, Any], sub_level: Optional[str] = None, scheme=param_types
+):
+    for key in params:
+        if type(key) is not str:
+            raise RuntimeError(
+                "All keys must be strings, but '{}' is '{}'".format(key, key)
+            )
+
+        if not key in scheme:
+            if default_key in scheme:
+                if type(params[key]) is not scheme[default_key]:
+                    raise RuntimeError(
+                        "Expected value of '{}' to be of type '{}'".format(
+                            key, scheme[default_key]
+                        )
+                    )
+                continue
+            if sub_level is None:
+                raise RuntimeError("Unknown top-level key '{}'".format(key))
+            else:
+                raise RuntimeError(
+                    "Unknown key '{}' for group '{}'".format(key, sub_level)
+                )
+
+        if type(scheme[key]) is type:
+            if type(params[key]) is not scheme[key]:
+                raise RuntimeError(
+                    "Expected value of '{}' to be of type '{}'".format(
+                        key, scheme[key].__name__
+                    )
+                )
+        elif type(scheme[key]) is list:
+            if not type(params[key]) in scheme[key]:
+                if all(type(x) == type for x in scheme[key]):
+                    raise RuntimeError(
+                        "Expected the type of the value of '{}' to be one of '{}', but got '{}'".format(
+                            key,
+                            ", ".join([x.__name__ for x in scheme[key]]),
+                            type(params[key]).__name__,
+                        )
+                    )
+                else:
+                    non_type_entries = [x for x in scheme[key] if type(x) is not type]
+                    assert len(non_type_entries) == 1
+                    assert type(non_type_entries[0]) == dict
+
+                    if type(params[key]) is not dict:
+                        raise RuntimeError(
+                            "Expected the type of the value of '{}' to be one of '{}' or a sub-object, but got '{}'".format(
+                                key,
+                                ", ".join(
+                                    x.__name__ for x in scheme[key] if type(x) is type
+                                ),
+                                type(params[key]).__name__,
+                            )
+                        )
+
+                    validate_parameter(
+                        params=params[key], sub_level=key, scheme=non_type_entries[0]
+                    )
+        elif type(scheme[key]) is dict:
+            if array_type_key in scheme[key]:
+                # The parameter at key is expected to be a list of expected_type
+                expected_type: type = scheme[key][array_type_key]
+                if type(params[key]) is not list:
+                    raise RuntimeError(
+                        "'{}' is expected to be a list of '{}'s".format(
+                            key, expected_type.__name__
+                        )
+                    )
+
+                for value in params[key]:
+                    if type(value) is not expected_type:
+                        raise RuntimeError(
+                            "'{}' is expected to be a list of '{}'s, but '{}' is of type '{}'".format(
+                                key, expected_type.__name__, value, type(value).__name__
+                            )
+                        )
+            else:
+                # The parameter at key is expected to be a sub-object (dict)
+                if type(params[key]) is not dict:
+                    raise RuntimeError("'{}' is expected to be a sub-object (dict)")
+
+                validate_parameter(
+                    params=params[key], sub_level=key, scheme=scheme[key]
+                )
+        else:
+            raise RuntimeError(
+                "Unhandled type '{}' in scheme specification for '{}'".format(
+                    type(scheme[key]).__name__
+                ),
+                key,
+            )
 
 
 def setup(process: pexpect.spawn, params: Dict[str, Any]):
@@ -333,6 +450,8 @@ def main():
         raise RuntimeError("'geometry' field is mandatory!")
 
     parameter["geometry"] = handle_geometry_conversion(parameter["geometry"], param_dir)
+
+    validate_parameter(params=parameter)
 
     run_define(parameter, debug=args.debug, timeout=args.timeout)
 
