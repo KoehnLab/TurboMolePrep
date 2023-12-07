@@ -1,0 +1,3 @@
+^$dft
+^[[:space:]]*functional[[:space:]]*pbe0
+^[[:space:]]*gridsize[[:space:]]*6

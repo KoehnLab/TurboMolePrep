@@ -1,0 +1,9 @@
+{
+	"geometry": "geometry.xyz",
+	"calculation": {
+		"dft": {
+			"functional": "pbe0",
+			"grid": 6
+		}
+	}
+}
