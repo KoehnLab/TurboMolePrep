@@ -2,7 +2,7 @@
 
 import pexpect
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 
 import argparse
 import json
@@ -311,12 +311,91 @@ def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None)
 
 
 named_calc_params = {
-    "dft_grid": ["dft > grid > {}"],
     "dispersion_correction": ["dsp > {}"],
-    "functional": ["dft > on", "dft > func {}"],
     "max_scf_iterations": ["scf > iter > {}"],
     "x2c": ["scf > x2c > {}"],
 }
+
+
+def configure_dft_parameter(process: pexpect.spawn, params: Union[str, Dict[str, Any]]):
+    summary = r"STATUS OF DFT[_ ]OPTIONS:\s*DFT is\s*(NOT)?\s*used\s*functional\s*([\w-]+)\s*gridsize\s*([\w-]+)"
+    functional_not_supported = r"SPECIFIED FUNCTIONAL not SUPPORTED. RESET TO DEFAULT."
+    grid_not_supported = r"SPE[ZC]IFIED GRIDSIZE not SUPPORTED. RESET TO DEFAULT"
+
+    if type(params) == str:
+        # We interpret this as the name of the functional to use
+        params = {"functional": params}
+
+    assert type(params) == dict
+
+    # Enter DFT menu
+    process.sendline("dft")
+    process.expect(summary)
+
+    # Enable DFT
+    process.sendline("on")
+    process.expect(summary)
+    if process.match.group(1) is not None:
+        raise RuntimeError("Enabling DFT failed")
+
+    for key in params:
+        if key == "functional":
+            process.sendline("func {}".format(params[key]))
+            idx = process.expect([functional_not_supported, summary])
+
+            if idx == 0:
+                raise RuntimeError(
+                    "DFT functional with name '{}' is not supported by your version of TurboMole".format(
+                        params[key]
+                    )
+                )
+
+            assert idx == 1
+            active_functional = process.match.group(2).decode("utf-8")
+            if active_functional.lower() != params[key].lower():
+                raise RuntimeError(
+                    "Tried to use DFT functional '{}', but define selected '{}' instead".format(
+                        params[key], active_functional
+                    )
+                )
+        elif key == "grid":
+            # Ensure param type is str
+            params[key] = str(params[key])
+            process.sendline("grid {}".format(params[key]))
+            idx = process.expect([grid_not_supported, summary])
+
+            if idx == 0:
+                raise RuntimeError(
+                    "DFT grid '{}' is not supported by your version of TurboMole".format(
+                        params[key]
+                    )
+                )
+
+            assert idx == 1
+            active_grid = process.match.group(3).decode("utf-8")
+            if active_grid.lower() != params[key].lower():
+                raise RuntimeError(
+                    "Tried to use DFT grid '{}', but define selected '{}' instead".format(
+                        params[key], active_grid
+                    )
+                )
+        else:
+            raise RuntimeError(
+                "Undefined keyword in dft option block - should have been caught during verification"
+            )
+
+    # The last thing that has been matched has been the summary (across all code paths)
+    dft_active = process.match.group(1) is None
+    functional = process.match.group(2).decode("utf-8")
+    grid = process.match.group(3).decode("utf-8")
+
+    if not dft_active:
+        raise RuntimeError("DFT activation has failed")
+
+    print("Enabled DFT (functional: '{}'; grid: '{}')".format(functional, grid))
+
+    # Leave DFT menu by sending enter
+    process.sendline("")
 
 
 def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
@@ -335,14 +414,19 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     if len(calc_params) == 0:
         raise RuntimeError("calculation object must not be empty")
 
-    for option in named_calc_params:
-        if option in calc_params:
-            value = calc_params[option]
+    for current in calc_params:
+        if current == "generic":
+            # Those are handled last and separately
+            continue
+        if current == "dft":
+            configure_dft_parameter(process, params=calc_params[current])
+        elif current in named_calc_params:
+            value = calc_params[current]
 
             if type(value) == bool:
                 value = "y" if value else "n"
 
-            for instruction in named_calc_params[option]:
+            for instruction in named_calc_params[current]:
                 set_generic_calc_param(process, instruction, value)
 
                 process.expect(headline)

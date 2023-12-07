@@ -102,18 +102,25 @@ This option group defines parameters for the calculation that shall be performed
 
 | **Name** | **Description** | **Type** |
 | -------- | --------------- | -------- |
-| `dft_grid` | Set the grid to be used in DFT. Does **not** turn on DFT. | `String` or `Integer` |
+| `dft` | Turns on DFT with the given parameters. If the value is a string, then that will be used as the name of the functional | `String` or sub-object |
 | `dispersion_correction` | What disperson correction method to use | `String` |
-| `functional` | Specify DFT functional and turn on DFT | `String` |
 | `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` |
 | `x2c` | Enables or disables X2C | `Boolean` |
 
 Example:
 ```json
 "calculation": {
-    "functional": "pbe0"
+    "dft": "pbe0"
 }
 ```
+
+#### dft sub-object
+
+The argument of the `dft` option can be a nested JSON object, which can have the following fields
+| **Name | **Description** | **Type** |
+| ------ | --------------- | -------- |
+| `functional` | Specifies the functional to use | `String` |
+| `grid` | Specifies the integration grid that shall be used | `String` or `Integer` |
 
 
 ### generic
