@@ -84,7 +84,7 @@ anything that `define` also accepts, e.g.
 - `all` to assign the same basis set to all atoms
 - element label to assign the basis set to all atoms of the given element. Note: contrary to the `define` input, no extra quotation marks are
   necessary
-- Indices to assign the corresponding atoms the chosen basis sets. Indices start at `1` (the first atom in the geometry) and index ranges and
+- Indices to assign the corresponding elements the chosen basis sets. Indices start at `1` (hydrogen) and index ranges and
   enumerations (e.g. `1,2,6-9`) are permitted
 
 Example:
