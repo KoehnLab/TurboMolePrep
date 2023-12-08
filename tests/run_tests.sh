@@ -18,39 +18,26 @@ if [[ ! -x "$( which python3 )" ]]; then
 	exit 2
 fi
 
-export script_dir="$( realpath "$( dirname "$0" )" )"
+script_dir="$( realpath "$( dirname "$0" )" )"
+prep_script="$( realpath "${script_dir}/../prep_turbomole_calc.py" )"
+
+if [[ ! -f "$prep_script" ]]; then
+	error_msg "Unable to find script '$prep_script'"
+	exit 3
+fi
+
 
 function perform_test {
-	local input="$( realpath "$1" )"
-	local test_name="$( basename "$input" .json )"
-
-	echo "> Running ${test_name}..."
-
-	local expectations="$( dirname "$input" )/${test_name}.grep"
-	local script="${script_dir}/../prep_turbomole_calc.py"
-
-	if [[ ! -f "$script" ]]; then
-		error_msg "Unable to find script '$script'"
-		exit 3
-	fi
-
-	local workdir="$script_dir/$test_name"
-	if [[ -d "$workdir" ]]; then
-		# Clear workdir
-		rm -rf "$workdir/"
-	fi
-	# Create workdir
-	mkdir "$workdir"
-
-	cd "$workdir"
+	local input="$1"
+	local expectations="$2"
 
 	# Execute script
-	python3 "$script" "$input"
+	python3 "$prep_script" "$input" || exit "$?"
 
 	local control_file="control"
 
 	if [[ ! -f "$control_file" ]]; then
-		error_msg "No control file generated (expected it at '$control_file')"
+		error_msg "No control file generated"
 		exit 4
 	fi
 
@@ -78,12 +65,65 @@ function perform_test {
 			fi
 		fi
 	done
-
-	echo "< Test $test_name passed"
 }
 
-export -f perform_test
-export -f error_msg
-export SHELLOPTS
+# See https://stackoverflow.com/a/29779745
+function indent {
+	 sed 's/^/    /'
+}
 
-find "$script_dir" -maxdepth 1 -type f -iname "*.json" -exec bash -c "perform_test {}" \;
+if [[ -z "${1-}" ]]; then
+	readarray -t test_inputs < <( find "$script_dir" -maxdepth 1 -mindepth 1 -type f -iname "*.json" | sort )
+else
+	declare -a test_inputs=( "$@" )
+fi
+
+declare -a passed=()
+declare -a failed=()
+
+for current in "${test_inputs[@]}"; do
+	test_name="$( basename "$current" .json )"
+	work_dir="${script_dir}/${test_name}"
+
+	if [[ -d "$work_dir" ]]; then
+		rm -r "$work_dir"
+	fi
+
+	mkdir "$work_dir"
+	cd "$work_dir"
+
+	echo -n "Running test $test_name..."
+
+	exit_code=0
+	test_output="$( 2>&1 perform_test "${script_dir}/${test_name}.json" "${script_dir}/${test_name}.grep" | indent )" || exit_code=$?
+
+	if [[ "$exit_code" -eq 0 ]]; then
+		echo " Passed."
+		passed+=( "$test_name" )
+	else
+		echo " ***Failed:"
+		echo "$test_output"
+		failed+=( "$test_name" )
+	fi
+
+	cd "$script_dir"
+done
+
+exit_code=0
+
+echo ""
+
+if [[ "${#failed[@]}" -gt 0 ]]; then
+	echo "The following tests failed"
+
+	for current in "${failed[@]}"; do
+		echo " * $current"
+	done
+
+	echo ""
+
+	exit_code=128
+fi
+
+echo "${#passed[@]} of $(( ${#passed[@]} + ${#failed[@]} )) tests passed"
+exit "$exit_code"
