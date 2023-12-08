@@ -137,6 +137,7 @@ where `<value>` is the string given to the `ri` option.
 
 If `ri` is directly given a nested JSON object, then this object can have the following options set:
 | **Name** | **Description** | **Type** | **Default** |
+| -------- | --------------- | -------- | ----------- |
 | `type` | Which integrals to decompose | `String` (see below) | `Coulomb` |
 | `multipole_acceleration | Whether to enable use of mulitpole acceleration (`marij`) for the Coulomb contributions | `Boolean` | `true` |
 
