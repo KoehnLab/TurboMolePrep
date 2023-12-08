@@ -106,6 +106,7 @@ This option group defines parameters for the calculation that shall be performed
 | `dft` | Turns on DFT with the given parameters. If the value is a string, then that will be used as the name of the functional | `String` or sub-object (see below) |
 | `dispersion_correction` | What disperson correction method to use | `String` |
 | `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` |
+| `ri` | Enables use of the resolution-of-the-identity (density-fitting) approximation for the chosen integrals | `String` or sub-object (see below) |
 | `x2c` | Enables or disables X2C | `Boolean` |
 
 Example:
@@ -122,6 +123,33 @@ The argument of the `dft` option can be a nested JSON object, which can have the
 | -------- | --------------- | -------- |
 | `functional` | Specifies the functional to use | `String` |
 | `grid` | Specifies the integration grid that shall be used | `String` or `Integer` |
+
+
+#### ri options
+
+If the value of the `ri` option is of type `String`, it is a shorthand for the following, more explicit notation:
+```json
+"ri": {
+    "type": <value>
+}
+```
+where `<value>` is the string given to the `ri` option.
+
+If `ri` is directly given a nested JSON object, then this object can have the following options set:
+| **Name** | **Description** | **Type** | **Default** |
+| `type` | Which integrals to decompose | `String` (see below) | `Coulomb` |
+| `multipole_acceleration | Whether to enable use of mulitpole acceleration (`marij`) for the Coulomb contributions | `Boolean` | `true` |
+
+`type` decides whether to only apply RI for Coulomb-like contributions or whether to also apply them to exchange-like contributions. The allowed
+keywords and their effect are (case-insensitive and space-insensitive)
+- `ri`: Coulomb-only
+- `rij`: Coulomb-only
+- `coulomb`: Coulomb-only
+- `J`: Coulomb-only
+- `rijk`: Coulomb \& Exchange
+- `JK`: Coulomb \& Exchange
+- `Coulomb & Exchange`: Coulomb \& Exchange
+- `Coulomb + Exchange`: Coulomb \& Exchange
 
 
 ### generic

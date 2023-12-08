@@ -28,6 +28,7 @@ param_types = {
         "max_scf_iterations": int,
         "x2c": [bool, {"dlu": bool}],
         "generic": {array_type_key: str},
+        "ri": [str, {"type": str, "multipole_acceleration": bool}],
     },
 }
 
@@ -405,6 +406,52 @@ def configure_dft_parameter(process: pexpect.spawn, params: Union[str, Dict[str,
     process.sendline("")
 
 
+def configure_ri_parameters(process: pexpect.spawn, params: Union[str, Dict[str, Any]]):
+    ri_headline = r"STATUS OF RI-OPTIONS:\s*RI IS\s*(NOT)?\s*USED"
+    marij_option = r"threshold for multipole neglect"
+
+    if type(params) is str:
+        # Expand shorthand notation
+        params = {"type": params}
+
+    assert type(params) is dict
+
+    ri_type: str = params.get("type", "ri").lower().replace(" ", "")
+
+    # Handle ri_type synonyms
+    if ri_type in ["j", "coulomb", "rij"]:
+        ri_type = "ri"
+    elif ri_type in ["jk", "coulomb+exchange", "coulomb&exchange"]:
+        ri_type = "rijk"
+
+    if not ri_type in ["ri", "rijk"]:
+        raise RuntimeError("Unknown RI type '{}'".format(ri_type))
+
+    use_marij = params.get("multipole_acceleration", True)
+
+    # Enable the desired RI method by entering the menu given by ri_type and then sending "on"
+    process.sendline(ri_type)
+    process.expect(ri_headline)
+    process.sendline("on")
+    process.expect(ri_headline)
+
+    ri_active = process.match.group(1) is None
+
+    if not ri_active:
+        raise RuntimeError("Failed to enable RI (type: '{}')".format(ri_type))
+
+    # Exit RI menu
+    process.sendline("")
+
+    if use_marij:
+        # Enable multipole acceleration
+        process.sendline("marij")
+        process.expect(marij_option)
+
+        # Accept default parameter by sending enter
+        process.sendline("")
+
+
 def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"GENERAL MENU : SELECT YOUR TOPIC"
     end_of_prompt = r"\* or q\s*: END OF DEFINE SESSION"
@@ -427,6 +474,8 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
             continue
         if current == "dft":
             configure_dft_parameter(process, params=calc_params[current])
+        elif current == "ri":
+            configure_ri_parameters(process, params=calc_params[current])
         elif current in named_calc_params:
             value = calc_params[current]
 
@@ -438,6 +487,12 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
 
                 process.expect(headline)
                 process.expect(end_of_prompt)
+        elif current == "generic":
+            continue
+        else:
+            raise RuntimeError(
+                "Unknown calculation option - should have been caught during parameter validation"
+            )
 
     # Generic option instructions to cover all cases for which we don't have pre-defined options
     # The syntax is a simple

@@ -1,0 +1,9 @@
+{
+	"geometry": "geometry.xyz",
+	"calculation": {
+		"ri": {
+			"type": "JK",
+			"multipole_acceleration": false
+		}
+	}
+}
