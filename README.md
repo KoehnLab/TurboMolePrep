@@ -85,7 +85,7 @@ anything that `define` also accepts, e.g.
 - Indices to assign the corresponding elements the chosen basis sets. Indices start at `1` (hydrogen) and index ranges and
   enumerations (e.g. `1,2,6-9`) are permitted
 
-Note that groups are always processed from least-specific to most-specific. That means that it is possible to use the `all` option to set a default
+Note that groups are always processed from least-specific to most-specific. That means that it is possible to use the `all` group to set a default
 basis set that is subsequently overwritten for certain elements.
 
 Example:
