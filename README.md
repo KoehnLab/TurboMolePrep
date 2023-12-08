@@ -139,7 +139,7 @@ If `ri` is directly given a nested JSON object, then this object can have the fo
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
 | `type` | Which integrals to decompose | `String` (see below) | `Coulomb` |
-| `multipole_acceleration | Whether to enable use of mulitpole acceleration (`marij`) for the Coulomb contributions | `Boolean` | `true` |
+| `multipole_acceleration` | Whether to enable use of mulitpole acceleration (`marij`) for the Coulomb contributions | `Boolean` | `true` |
 
 `type` decides whether to only apply RI for Coulomb-like contributions or whether to also apply them to exchange-like contributions. The allowed
 keywords and their effect are (case-insensitive and space-insensitive)
