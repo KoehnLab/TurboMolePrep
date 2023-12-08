@@ -201,7 +201,14 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
         process.sendline("*")
         return
 
-    basis_info: Dict[str, Any] = params["basis_set"]
+    basis_info: Union[str, Dict[str, Any]] = params["basis_set"]
+
+    if type(basis_info) is str:
+        # Shorthand for using the same basis set for all atoms
+        basis_info = {"all": basis_info}
+
+    assert type(basis_info) is dict
+
     if len(basis_info) == 0:
         raise RuntimeError("'basis_set' object must not be empty!")
 

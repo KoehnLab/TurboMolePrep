@@ -30,9 +30,7 @@ will pass the information down to `define` in the necessary format. A sample set
     "geometry": "my_geom.xyz",
     "use_internal_coords": true,
     "detect_symmetry": true,
-    "basis_set": {
-        "all": "def2-TZVPP"
-    },
+    "basis_set": "def2-TZVPP"
     "charge": 0,
     "write_natural_orbitals": false
 }
@@ -64,6 +62,7 @@ These options are provided as simple key-value pairs on the first level in the J
 
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
+| `basis_set` | Specify the basis set(s) to use | `String` or sub-object (see below) | TurboMole's default |
 | `charge` | The charge of the system | `Integer` | `0` |
 | `detect_symmetry` |  Whether to let TurboMole autodetect the system's symmetry | `Boolean` | `true` |
 | `geometry` | Specifies the path to the file that contains the geometry of the system to be calculated. Automatic conversion from XYZ files to TurboMole format is supported. Relative paths are relative to the JSON file's directory. | `String` | - |
@@ -73,10 +72,9 @@ These options are provided as simple key-value pairs on the first level in the J
 | `write_natural_orbitals` | Whether to write out natural orbitals (after extended Hückel guess) | `Boolean` | `false` |
 
 
-### basis\_set
+### basis\_set options
 
-This option group contains information about the basis set that shall be used. If it is absent, the script will stick to TurboMole's automatically
-assigned basis set.
+The argument to the `basis_set` option can be a nested JSON object. In this case, one can specify basis sets on a per-element-basis.
 
 Basis sets are assigned as key-value pairs where the key is the group to which to apply the chosen basis set (indicated by the value). The group be
 anything that `define` also accepts, e.g.
@@ -87,10 +85,13 @@ anything that `define` also accepts, e.g.
 - Indices to assign the corresponding elements the chosen basis sets. Indices start at `1` (hydrogen) and index ranges and
   enumerations (e.g. `1,2,6-9`) are permitted
 
+Note that groups are always processed from least-specific to most-specific. That means that it is possible to use the `all` option to set a default
+basis set that is subsequently overwritten for certain elements.
+
 Example:
 ```json
 "basis_set": {
-    "C": "def2-SVP",
+    "all": "def2-SVP",
     "Cu": "def2-TZVPP",
     "3,4": "dz"
 }
