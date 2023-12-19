@@ -23,6 +23,9 @@ molecule_options = {
     "use_internal_coords": bool,
     "detect_symmetry": bool,
     "charge": int,
+    "isotopes": {
+        default_key: [int, {"nucleon_count": int, "gyromagnetic_ratio": float}]
+    },
 }
 basis_set_options = {default_key: str, "use_ecp": bool}
 
@@ -52,10 +55,25 @@ def validate_parameter(
 
         if not key in scheme:
             if default_key in scheme:
-                if type(params[key]) is not scheme[default_key]:
+                allowed = scheme[default_key]
+                if not type(allowed) is list:
+                    allowed = [allowed]
+                if type(params[key]) is dict and any(type(x) is dict for x in allowed):
+                    validate_parameter(
+                        params[key],
+                        sub_level=key,
+                        scheme=[x for x in scheme[default_key] if type(x) is dict][0],
+                    )
+                elif type(params[key]) not in allowed:
                     raise RuntimeError(
-                        "Expected value of '{}' to be of type '{}'".format(
-                            key, scheme[default_key]
+                        "Expected type of value of '{}' to be one of '{}'".format(
+                            key,
+                            ", ".join(
+                                [
+                                    x.__name__ if type(x) is not dict else str(x)
+                                    for x in allowed
+                                ]
+                            ),
                         )
                     )
                 continue
@@ -200,65 +218,106 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"ATOMIC ATTRIBUTE DEFINITION MENU\s*\(\s*#atoms=(\d+)\s*#bas=(\d+)\s*#ecp=(\d+)\s*\)"
     end_of_prompt = r"GOBACK=& \(TO GEOMETRY MENU !\)\r\n"
     basis_set_not_found = r"THERE ARE NO DATA SETS CATALOGUED IN FILE\s*\r\n(.+)\r\n\s*CORRESPONDING TO NICKNAME\s*([^\n]+)\r\n"
+    isotope_header = r"ENTER A SET OF ATOMS TO WHICH YOU WANT TO ASSIGN ISOTOPES"
+    isotope_no_gyrmag = r"NO GYROMAGNETIC RATIO WAS FOUND IN THE DATABASE"
+    isotope_assigned = r"SUPPLYING ISOTOPES TO"
 
     process.expect(headline)
     process.expect(end_of_prompt)
 
-    if not "basis_set" in params:
+    if "basis_set" in params:
+        basis_info: Dict[str, Any] = params["basis_set"]
+
+        if len(basis_info) == 0:
+            raise RuntimeError("'basis_set' object must not be empty!")
+
+        # Specify basis sets
+        # Always process from least specific group to most specific group
+        # That means (for us) "all" before element labels before element indices
+        groups = list(basis_info.keys())
+        groups.sort(key=basis_set_group_sort_key)
+
+        for group in groups:
+            basis_set = basis_info[group]
+
+            if group.isalpha():
+                group = group.lower()
+
+            if group != "all" and group.isalpha() and len(group) <= 2:
+                # We assume this is an element label -> wrap in quotes
+                group = '"{}"'.format(group)
+
+            process.sendline("b {} {}".format(group, basis_set))
+            idx = process.expect([basis_set_not_found, end_of_prompt])
+            if idx == 0:
+                basis_set_nick = process.match.group(2).decode("utf-8").strip()
+                basis_set_file = process.match.group(1).decode("utf-8").strip()
+                raise RuntimeError(
+                    "Invalid basis '{}' - check '{}' for available basis sets".format(
+                        basis_set_nick, basis_set_file
+                    )
+                )
+
+        if not basis_info.get("use_ecp", True):
+            process.sendline("ecprm all")
+            process.expect(headline)
+            nECPs = int(process.match.group(3))
+            if nECPs != 0:
+                raise RuntimeError("Failed at removing ECPs")
+            process.expect(end_of_prompt)
+
+        process.sendline("")
+        process.expect(headline)
+        nAtoms = int(process.match.group(1))
+        nBasisSets = int(process.match.group(2))
+
+        if nAtoms > nBasisSets:
+            raise RuntimeError("Not all atoms have an associated basis set")
+
+        process.expect(end_of_prompt)
+    else:
         # If no basis set was specified by the user, use TM's defaults
         print("Using default basis set(s) as proposed by TurboMole")
-        process.sendline("*")
-        return
 
-    basis_info: Dict[str, Any] = params["basis_set"]
-
-    if len(basis_info) == 0:
-        raise RuntimeError("'basis_set' object must not be empty!")
-
-    # Specify basis sets
-    # Always process from least specific group to most specific group
-    # That means (for us) "all" before element labels before element indices
-    groups = list(basis_info.keys())
-    groups.sort(key=basis_set_group_sort_key)
-
-    for group in groups:
-        basis_set = basis_info[group]
-
-        if group.isalpha():
-            group = group.lower()
-
-        if group != "all" and group.isalpha() and len(group) <= 2:
-            # We assume this is an element label -> wrap in quotes
-            group = '"{}"'.format(group)
-
-        process.sendline("b {} {}".format(group, basis_set))
-        idx = process.expect([basis_set_not_found, end_of_prompt])
-        if idx == 0:
-            basis_set_nick = process.match.group(2).decode("utf-8").strip()
-            basis_set_file = process.match.group(1).decode("utf-8").strip()
-            raise RuntimeError(
-                "Invalid basis '{}' - check '{}' for available basis sets".format(
-                    basis_set_nick, basis_set_file
-                )
+    if "isotopes" in params["molecule"]:
+        process.sendline("iso")
+        for element in params["molecule"]["isotopes"]:
+            process.expect(isotope_header)
+            nucleon_count = params["molecule"]["isotopes"][element]["nucleon_count"]
+            gyromagnetic_ratio = params["molecule"]["isotopes"][element].get(
+                "gyromagnetic_ratio", None
             )
 
-    if not basis_info.get("use_ecp", True):
-        process.sendline("ecprm all")
-        process.expect(headline)
-        nECPs = int(process.match.group(3))
-        if nECPs != 0:
-            raise RuntimeError("Failed at removing ECPs")
+            process.sendline('"{}" {}'.format(element.lower(), nucleon_count))
+            process.expect(isotope_assigned)
+            index = process.expect([isotope_no_gyrmag, pexpect.TIMEOUT], timeout=1)
+
+            if index == 0:
+                if gyromagnetic_ratio is None:
+                    process.sendline("")
+                    print(
+                        "Unknown or zero gyromagnetic ratio for {}{} - ignoring".format(
+                            nucleon_count, element
+                        )
+                    )
+                else:
+                    process.sendline(str(gyromagnetic_ratio))
+            else:
+                assert index == 1
+                if gyromagnetic_ratio is not None:
+                    raise RuntimeError(
+                        "Define doesn't allow assignment of gyromagnetic ratio for {}{}".format(
+                            nucleon_count, element
+                        )
+                    )
+
+            # Re-enter isotope assignment menu
+            process.sendline("iso")
+
+        # Exit isotope menu
+        process.sendline("")
         process.expect(end_of_prompt)
 
-    process.sendline("")
-    process.expect(headline)
-    nAtoms = int(process.match.group(1))
-    nBasisSets = int(process.match.group(2))
-
-    if nAtoms > nBasisSets:
-        raise RuntimeError("Not all atoms have an associated basis set")
-
-    process.expect(end_of_prompt)
     process.sendline("*")
 
 
@@ -628,8 +687,20 @@ def handle_legacy_parameter(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def expand_param_shortcuts(params: Dict[str, Any]) -> Dict[str, Any]:
-    if "molecule" in params and type(params["molecule"]) is str:
-        params["molecule"] = {"geometry": params["molecule"]}
+    if "molecule" in params:
+        if type(params["molecule"]) is str:
+            params["molecule"] = {"geometry": params["molecule"]}
+
+        molecule_options = params["molecule"]
+        assert type(molecule_options) is dict
+        if "isotopes" in molecule_options:
+            assert type(molecule_options["isotopes"]) is dict
+
+            for key in molecule_options["isotopes"]:  # type: ignore
+                if type(molecule_options["isotopes"][key]) is int:
+                    molecule_options["isotopes"][key] = {
+                        "nucleon_count": molecule_options["isotopes"][key]
+                    }
 
     if "basis_set" in params and type(params["basis_set"]) is str:
         params["basis_set"] = {"all": params["basis_set"]}

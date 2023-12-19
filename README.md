@@ -80,6 +80,25 @@ In case the argument to the `molecule` is of type string, the value is taken to 
 | `detect_symmetry` |  Whether to let TurboMole autodetect the system's symmetry | `Boolean` | `true` |
 | `geometry` | The path to the geometry specification of the system/molecule | `String` | - |
 | `use_internal_coords` | Whether to generate and use internal, redundant coordinates for the molecule (very useful for geometry optimizations) | `Boolean` | `true` |
+| `isotopes` | Specification of specific isotopes to use | sub-object (see below) | TurboMole's default |
+
+
+#### isotope options
+
+The value of the `isotopes` sub-option is a nested JSON object whose keys are expected to be element symbols and whose values can either be an integer
+or another nested sub-object with keys `nucleon_count` and `gyromagnetic_ratio`. This allows to specify the gyromagnetic ratio for nuclei that
+TurboMole doesn't support out-of-the-box.
+
+Example:
+```json
+"isotopes": {
+    "C": 13,
+    "H": {
+        "nucleon_count": 3,
+        "gyromagnetic_ratio": 5.95799369
+    }
+}
+```
 
 
 ### basis\_set options

@@ -1,0 +1,12 @@
+{
+	"molecule": {
+		"geometry": "geometry.xyz",
+		"isotopes": {
+			"Cl": 37,
+			"H": {
+				"nucleon_count": 4,
+				"gyromagnetic_ratio": 42.5
+			}
+		}
+	}
+}
