@@ -13,6 +13,12 @@ import os
 default_key = "-DeFaUlT-"
 array_type_key = "-ArRaYtYpE-"
 
+dft_params = {
+    "functional": str,
+    "grid": [str, int],
+    "dispersion_correction": str,
+}
+
 param_types = {
     "charge": int,
     "detect_symmetry": bool,
@@ -23,8 +29,7 @@ param_types = {
     "write_natural_orbitals": bool,
     "basis_set": [str, {default_key: str}],
     "calculation": {
-        "dft": [str, {"functional": str, "grid": [str, int]}],
-        "dispersion_correction": str,
+        "dft": [str, dft_params],
         "max_scf_iterations": int,
         "x2c": [bool, {"dlu": bool}],
         "generic": {array_type_key: str},
@@ -319,7 +324,6 @@ def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None)
 
 
 named_calc_params = {
-    "dispersion_correction": ["dsp > {}"],
     "max_scf_iterations": ["scf > iter > {}"],
     "x2c": ["scf > x2c > {}"],
 }
@@ -329,6 +333,7 @@ def configure_dft_parameter(process: pexpect.spawn, params: Union[str, Dict[str,
     summary = r"STATUS OF DFT[_ ]OPTIONS:\s*DFT is\s*(NOT)?\s*used\s*functional\s*([\w-]+)\s*gridsize\s*([\w-]+)"
     functional_not_supported = r"SPECIFIED FUNCTIONAL not SUPPORTED. RESET TO DEFAULT."
     grid_not_supported = r"SPE[ZC]IFIED GRIDSIZE not SUPPORTED. RESET TO DEFAULT"
+    disp_corr = r"STATUS OF DFT DISPERSION CORRECTION\s*([\w-]+)?\s*correction is\s*(not)?\s*used"
 
     if type(params) == str:
         # We interpret this as the name of the functional to use
@@ -387,6 +392,29 @@ def configure_dft_parameter(process: pexpect.spawn, params: Union[str, Dict[str,
                         params[key], active_grid
                     )
                 )
+        elif key == "dispersion_correction":
+            # Leave dft menu
+            process.sendline("")
+            # Enter dsp menu
+            process.sendline("dsp")
+            process.expect(disp_corr)
+            process.sendline(params[key])
+            process.expect(disp_corr)
+
+            active = process.match.group(2) is None
+            if not active:
+                raise RuntimeError("Failed at activating dispersion correction")
+
+            method = process.match.group(1)
+            if method is None:
+                raise RuntimeError("Unable to extract dispersion correction method")
+            method = method.decode("utf-8")
+            print("Enabled '{}' dispersion correction".format(method))
+
+            # Leave submenu and re-enter dft menu
+            process.sendline("")
+            process.sendline("dft")
+            process.expect(summary)
         else:
             raise RuntimeError(
                 "Undefined keyword in dft option block - should have been caught during verification"
@@ -542,6 +570,40 @@ def handle_geometry_conversion(geom_path: str, base_path: str) -> str:
     return geom_path
 
 
+def handle_legacy_parameter(params: Dict[str, Any]) -> Dict[str, Any]:
+    if "calculation" in params:
+        calc_params = params["calculation"]
+
+        if "dispersion_correction" in calc_params:
+            if "dft" not in calc_params:
+                print(
+                    "Warning: Ignoring legacy dispersion_correction parameter as no DFT calculation will be performed"
+                )
+                del calc_params["dispersion_correction"]
+            else:
+                dft_options = calc_params["dft"]
+
+                if type(dft_options) is str:
+                    calc_params["dft"] = {"functional": dft_options}
+                    dft_options = calc_params["dft"]
+
+                if "dispersion_correction" in dft_options:
+                    raise RuntimeError(
+                        "Legacy dispersion_correction parameter conflicts with explicit specification in dft group"
+                    )
+
+                dft_options["dispersion_correction"] = calc_params[
+                    "dispersion_correction"
+                ]
+                del calc_params["dispersion_correction"]
+                calc_params["dft"] = dft_options
+
+        if len(calc_params) == 0:
+            del params["calculation"]
+
+    return params
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run define with a set of pre-defined parameters in order to prepare a TurboMole computation"
@@ -591,6 +653,8 @@ def main():
         param_dir = "."
     if args.cd:
         os.chdir(param_dir)
+
+    parameter = handle_legacy_parameter(params=parameter)
 
     if not "geometry" in parameter:
         raise RuntimeError("'geometry' field is mandatory!")

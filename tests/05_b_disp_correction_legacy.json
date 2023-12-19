@@ -1,8 +1,7 @@
 {
 	"geometry": "geometry.xyz",
 	"calculation": {
-		"dft": {
-			"dispersion_correction": "d4"
-		}
+		"dft": "pbe",
+		"dispersion_correction": "d4"
 	}
 }
