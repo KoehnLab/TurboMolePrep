@@ -27,11 +27,13 @@ will pass the information down to `define` in the necessary format. A sample set
 ```json
 {
     "title": "My awesome TurboMole calculation",
-    "geometry": "my_geom.xyz",
-    "use_internal_coords": true,
-    "detect_symmetry": true,
+    "molecule": {
+        "geometry": "my_geom.xyz",
+        "use_internal_coords": true,
+        "charge": 0,
+        "detect_symmetry": true
+    },
     "basis_set": "def2-TZVPP"
-    "charge": 0,
     "write_natural_orbitals": false
 }
 ```
