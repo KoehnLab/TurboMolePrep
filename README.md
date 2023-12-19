@@ -103,12 +103,13 @@ Example:
     "Cu": "def2-TZVPP",
     "3,4": "dz"
 }
+```
 
 Additionally, the following options can be specified:
+
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
 | `use_ecp` | Whether any ECPs shall be used. If not, the script tries to remove all assigned ECPs (but sometimes TurboMole can be stubborn about this) | `Boolean` | `true` |
-```
 
 ## calculation
 
