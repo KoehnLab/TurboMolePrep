@@ -1,4 +1,6 @@
 {
-	"geometry": "geometry.xyz",
-	"detect_symmetry": false
+	"molecule": {
+		"geometry": "geometry.xyz",
+		"detect_symmetry": false
+	}
 }

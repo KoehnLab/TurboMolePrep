@@ -2,7 +2,7 @@
 
 import pexpect
 
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional
 
 import argparse
 import json
@@ -18,16 +18,19 @@ dft_params = {
     "grid": [str, int],
     "dispersion_correction": str,
 }
+molecule_options = {
+    "geometry": str,
+    "use_internal_coords": bool,
+    "detect_symmetry": bool,
+    "charge": int,
+}
+basis_set_options = {default_key: str, "use_ecp": bool}
 
 param_types = {
-    "charge": int,
-    "detect_symmetry": bool,
-    "geometry": str,
     "title": str,
-    "use_ecp": bool,
-    "use_internal_coords": bool,
+    "molecule": [str, molecule_options],
     "write_natural_orbitals": bool,
-    "basis_set": [str, {default_key: str}],
+    "basis_set": [str, basis_set_options],
     "calculation": {
         "dft": [str, dft_params],
         "max_scf_iterations": int,
@@ -151,25 +154,25 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
 
     process.expect(headline)
     process.expect(end_of_prompt)
-    process.sendline("a {}".format(params["geometry"]))
+    process.sendline("a {}".format(params["molecule"]["geometry"]))
 
     process.expect(headline)
     nAtoms = int(process.match.group(1))
     if nAtoms == 0:
         raise RuntimeError(
             "Failed at adding geometry '{}': no atoms were added".format(
-                params["geometry"]
+                params["molecule"]["geometry"]
             )
         )
 
     process.expect(end_of_prompt)
 
-    use_interals = params.get("use_internal_coords", True)
+    use_interals = params["molecule"].get("use_internal_coords", True)
 
-    if params.get("use_internal_coords", True):
+    if use_interals:
         process.sendline("ired")
         process.expect(end_of_prompt)
-    if params.get("detect_symmetry", True):
+    if params["molecule"].get("detect_symmetry", True):
         process.sendline("desy")
         process.expect(headline)
         sym = process.match.group(2).decode("utf-8")
@@ -207,13 +210,7 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
         process.sendline("*")
         return
 
-    basis_info: Union[str, Dict[str, Any]] = params["basis_set"]
-
-    if type(basis_info) is str:
-        # Shorthand for using the same basis set for all atoms
-        basis_info = {"all": basis_info}
-
-    assert type(basis_info) is dict
+    basis_info: Dict[str, Any] = params["basis_set"]
 
     if len(basis_info) == 0:
         raise RuntimeError("'basis_set' object must not be empty!")
@@ -245,7 +242,7 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
                 )
             )
 
-    if not params.get("use_ecp", True):
+    if not basis_info.get("use_ecp", True):
         process.sendline("ecprm all")
         process.expect(headline)
         nECPs = int(process.match.group(3))
@@ -294,7 +291,7 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
             # Always accept defaults
             process.sendline("y")
         elif idx == 1:
-            process.sendline("{}".format(params.get("charge", 0)))
+            process.sendline("{}".format(params["molecule"].get("charge", 0)))
         elif idx == 2:
             # Always accept the produced occupation
             process.sendline("y")
@@ -329,17 +326,11 @@ named_calc_params = {
 }
 
 
-def configure_dft_parameter(process: pexpect.spawn, params: Union[str, Dict[str, Any]]):
+def configure_dft_parameter(process: pexpect.spawn, params: Dict[str, Any]):
     summary = r"STATUS OF DFT[_ ]OPTIONS:\s*DFT is\s*(NOT)?\s*used\s*functional\s*([\w-]+)\s*gridsize\s*([\w-]+)"
     functional_not_supported = r"SPECIFIED FUNCTIONAL not SUPPORTED. RESET TO DEFAULT."
     grid_not_supported = r"SPE[ZC]IFIED GRIDSIZE not SUPPORTED. RESET TO DEFAULT"
     disp_corr = r"STATUS OF DFT DISPERSION CORRECTION\s*([\w-]+)?\s*correction is\s*(not)?\s*used"
-
-    if type(params) == str:
-        # We interpret this as the name of the functional to use
-        params = {"functional": params}
-
-    assert type(params) == dict
 
     # Enter DFT menu
     process.sendline("dft")
@@ -434,15 +425,9 @@ def configure_dft_parameter(process: pexpect.spawn, params: Union[str, Dict[str,
     process.sendline("")
 
 
-def configure_ri_parameters(process: pexpect.spawn, params: Union[str, Dict[str, Any]]):
+def configure_ri_parameters(process: pexpect.spawn, params: Dict[str, Any]):
     ri_headline = r"STATUS OF RI-OPTIONS:\s*RI IS\s*(NOT)?\s*USED"
     marij_option = r"threshold for multipole neglect"
-
-    if type(params) is str:
-        # Expand shorthand notation
-        params = {"type": params}
-
-    assert type(params) is dict
 
     ri_type: str = params.get("type", "ri").lower().replace(" ", "")
 
@@ -583,10 +568,6 @@ def handle_legacy_parameter(params: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 dft_options = calc_params["dft"]
 
-                if type(dft_options) is str:
-                    calc_params["dft"] = {"functional": dft_options}
-                    dft_options = calc_params["dft"]
-
                 if "dispersion_correction" in dft_options:
                     raise RuntimeError(
                         "Legacy dispersion_correction parameter conflicts with explicit specification in dft group"
@@ -600,6 +581,66 @@ def handle_legacy_parameter(params: Dict[str, Any]) -> Dict[str, Any]:
 
         if len(calc_params) == 0:
             del params["calculation"]
+
+    if "geometry" in params:
+        if not "molecule" in params:
+            params["molecule"] = {"geometry": params["geometry"]}
+            del params["geometry"]
+        else:
+            raise RuntimeError(
+                "Can't use legacy 'geometry' and 'molecule' option simultaneously"
+            )
+
+    molecule_options = params.get("molecule", None)
+    if molecule_options is not None:
+        if "detect_symmetry" in params:
+            if "detect_symmetry" in molecule_options:
+                raise RuntimeError("Conflicting sets of options for 'detect_symmetry'")
+
+            molecule_options["detect_symmetry"] = params["detect_symmetry"]
+            del params["detect_symmetry"]
+
+        if "use_internal_coords" in params:
+            if "use_internal_coords" in molecule_options:
+                raise RuntimeError(
+                    "Conflicting sets of options for 'use_internal_coords'"
+                )
+
+            molecule_options["use_internal_coords"] = params["use_internal_coords"]
+            del params["use_internal_coords"]
+        if "charge" in params:
+            if "charge" in molecule_options:
+                raise RuntimeError("Conflicting set of options for 'charge'")
+            molecule_options["charge"] = params["charge"]
+            del params["charge"]
+
+    if "use_ecp" in params:
+        basis_set_options = params.get("basis_set", None)
+        if basis_set_options is None:
+            raise RuntimeError(
+                "Can't specify use_ecp option without specifying a basis set"
+            )
+
+        basis_set_options["use_ecp"] = params["use_ecp"]
+        del params["use_ecp"]
+
+    return params
+
+
+def expand_param_shortcuts(params: Dict[str, Any]) -> Dict[str, Any]:
+    if "molecule" in params and type(params["molecule"]) is str:
+        params["molecule"] = {"geometry": params["molecule"]}
+
+    if "basis_set" in params and type(params["basis_set"]) is str:
+        params["basis_set"] = {"all": params["basis_set"]}
+
+    if "calculation" in params:
+        calc_options = params["calculation"]
+
+        if "dft" in calc_options and type(calc_options["dft"]) is str:
+            calc_options["dft"] = {"functional": calc_options["dft"]}
+        if "ri" in calc_options and type(calc_options["ri"]) is str:
+            calc_options["ri"] = {"type": calc_options["ri"]}
 
     return params
 
@@ -654,12 +695,15 @@ def main():
     if args.cd:
         os.chdir(param_dir)
 
+    parameter = expand_param_shortcuts(params=parameter)
     parameter = handle_legacy_parameter(params=parameter)
 
-    if not "geometry" in parameter:
-        raise RuntimeError("'geometry' field is mandatory!")
+    if not "molecule" in parameter or not "geometry" in parameter["molecule"]:
+        raise RuntimeError("'molecule > geometry' option is mandatory!")
 
-    parameter["geometry"] = handle_geometry_conversion(parameter["geometry"], param_dir)
+    parameter["molecule"]["geometry"] = handle_geometry_conversion(
+        parameter["molecule"]["geometry"], param_dir
+    )
 
     validate_parameter(params=parameter)
 

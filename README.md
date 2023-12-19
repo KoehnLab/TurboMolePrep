@@ -63,13 +63,21 @@ These options are provided as simple key-value pairs on the first level in the J
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
 | `basis_set` | Specify the basis set(s) to use | `String` or sub-object (see below) | TurboMole's default |
+| `molecule` | Specifies the path to the file that contains the geometry of the system to be calculated. Automatic conversion from XYZ files to TurboMole format is supported. Relative paths are relative to the JSON file's directory. | `String` or nested sub-object (see below) | - |
+| `title`  | Sets the title of the calculation | `String` | No title |
+| `write_natural_orbitals` | Whether to write out natural orbitals (after extended Hückel guess) | `Boolean` | `false` |
+
+
+### molecule options
+
+In case the argument to the `molecule` is of type string, the value is taken to specify the molecule's geometry (which is mandatory!)
+
+| **Name** | **Description** | **Type** | **Default** |
+| -------- | --------------- | -------- | ----------- |
 | `charge` | The charge of the system | `Integer` | `0` |
 | `detect_symmetry` |  Whether to let TurboMole autodetect the system's symmetry | `Boolean` | `true` |
-| `geometry` | Specifies the path to the file that contains the geometry of the system to be calculated. Automatic conversion from XYZ files to TurboMole format is supported. Relative paths are relative to the JSON file's directory. | `String` | - |
-| `title`  | Sets the title of the calculation | `String` | No title |
-| `use_ecp` | Whether any ECPs shall be used. If not, the script tries to remove all assigned ECPs (but sometimes TurboMole can be stubborn about this) | `Boolean` | `true` |
+| `geometry` | The path to the geometry specification of the system/molecule | `String` | - |
 | `use_internal_coords` | Whether to generate and use internal, redundant coordinates for the molecule (very useful for geometry optimizations) | `Boolean` | `true` |
-| `write_natural_orbitals` | Whether to write out natural orbitals (after extended Hückel guess) | `Boolean` | `false` |
 
 
 ### basis\_set options
@@ -95,6 +103,11 @@ Example:
     "Cu": "def2-TZVPP",
     "3,4": "dz"
 }
+
+Additionally, the following options can be specified:
+| **Name** | **Description** | **Type** | **Default** |
+| -------- | --------------- | -------- | ----------- |
+| `use_ecp` | Whether any ECPs shall be used. If not, the script tries to remove all assigned ECPs (but sometimes TurboMole can be stubborn about this) | `Boolean` | `true` |
 ```
 
 ## calculation

@@ -1,5 +1,5 @@
 {
-	"geometry": "geometry.xyz",
+	"molecule": "geometry.xyz",
 	"calculation": {
 		"dft": {
 			"dispersion_correction": "d4"

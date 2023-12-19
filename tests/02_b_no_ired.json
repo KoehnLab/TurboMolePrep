@@ -1,5 +1,6 @@
 {
-	"geometry": "geometry.xyz",
-	"use_internal_coords": false
+	"molecule": {
+		"geometry": "geometry.xyz",
+		"use_internal_coords": false
+	}
 }
-

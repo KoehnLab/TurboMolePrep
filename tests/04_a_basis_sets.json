@@ -1,5 +1,5 @@
 {
-	"geometry": "geometry.xyz",
+	"molecule": "geometry.xyz",
 	"basis_set": {
 		"all": "def2-TZVPP",
 		"H": "def2-SVP",

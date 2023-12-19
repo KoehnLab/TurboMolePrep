@@ -1,4 +1,4 @@
 {
 	"molecule": "geometry.xyz",
-	"basis_set": "def2-QZVPP"
+	"use_internal_coords": true
 }

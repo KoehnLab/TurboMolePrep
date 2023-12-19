@@ -1,6 +1,7 @@
 {
 	"molecule": {
 		"geometry": "geometry.xyz",
+		"detect_symmetry": true,
 		"use_internal_coords": true
 	}
 }
