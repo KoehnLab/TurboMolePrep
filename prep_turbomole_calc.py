@@ -36,6 +36,7 @@ param_types = {
     "basis_set": [str, basis_set_options],
     "calculation": {
         "dft": [str, dft_params],
+        "finite_nucleus": bool,
         "max_scf_iterations": int,
         "x2c": [bool, {"dlu": bool}],
         "generic": {array_type_key: str},
@@ -527,6 +528,7 @@ def configure_ri_parameters(process: pexpect.spawn, params: Dict[str, Any]):
 def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"GENERAL MENU : SELECT YOUR TOPIC"
     end_of_prompt = r"\* or q\s*: END OF DEFINE SESSION"
+    scf_submenu = r"ENTER SCF-OPTION TO BE MODIFIED"
 
     process.expect(headline)
     process.expect(end_of_prompt)
@@ -559,8 +561,19 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
 
                 process.expect(headline)
                 process.expect(end_of_prompt)
-        elif current == "generic":
-            continue
+        elif current == "finite_nucleus":
+            process.sendline("scf")
+            process.expect(scf_submenu)
+            process.sendline("finnuc")
+            process.expect("Do you want to switch finnuc on?")
+            if calc_params[current]:
+                process.sendline("y")
+                process.expect("Finite nucleus model selected")
+            else:
+                process.sendline("n")
+            # Leave SCF menu again
+            process.sendline("")
+            process.expect(headline)
         else:
             raise RuntimeError(
                 "Unknown calculation option - should have been caught during parameter validation"

@@ -1,0 +1,6 @@
+{
+	"molecule": "geometry.xyz",
+	"calculation": {
+		"finite_nucleus": true
+	}
+}

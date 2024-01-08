@@ -136,12 +136,13 @@ Additionally, the following options can be specified:
 
 This option group defines parameters for the calculation that shall be performed.
 
-| **Name** | **Description** | **Type** |
-| -------- | --------------- | -------- |
-| `dft` | Turns on DFT with the given parameters. If the value is a string, then that will be used as the name of the functional | `String` or sub-object (see below) |
-| `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` |
-| `ri` | Enables use of the resolution-of-the-identity (density-fitting) approximation for the chosen integrals | `String` or sub-object (see below) |
-| `x2c` | Enables or disables X2C | `Boolean` |
+| **Name** | **Description** | **Type** | **Default** |
+| -------- | --------------- | -------- | ----------- |
+| `dft` | Turns on DFT with the given parameters. If the value is a string, then that will be used as the name of the functional | `String` or sub-object (see below) | unset |
+| `finite_nucleus` | Enables the use of a finite nucleus (Gaussian charge distribution) model | `Boolean` | `false` |
+| `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` | TurboMole default |
+| `ri` | Enables use of the resolution-of-the-identity (density-fitting) approximation for the chosen integrals | `String` or sub-object (see below) | `false` |
+| `x2c` | Enables or disables X2C | `Boolean` | `false` |
 
 Example:
 ```json
