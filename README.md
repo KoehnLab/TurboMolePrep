@@ -142,7 +142,7 @@ This option group defines parameters for the calculation that shall be performed
 | `finite_nucleus` | Enables the use of a finite nucleus (Gaussian charge distribution) model | `Boolean` | `false` |
 | `max_scf_iterations` | Sets the maximum SCF iterations | `Integer` | TurboMole default |
 | `ri` | Enables use of the resolution-of-the-identity (density-fitting) approximation for the chosen integrals | `String` or sub-object (see below) | `false` |
-| `x2c` | Enables or disables X2C | `Boolean` | `false` |
+| `x2c` | Configures use of X2C | `Boolean` or sub-object (see below) | `false` |
 
 Example:
 ```json
@@ -187,6 +187,24 @@ keywords and their effect are (case-insensitive and space-insensitive)
 - `JK`: Coulomb \& Exchange
 - `Coulomb & Exchange`: Coulomb \& Exchange
 - `Coulomb + Exchange`: Coulomb \& Exchange
+
+
+#### x2c
+
+If the value of the `x2c` option is a boolean, it is a shorthand for for the following, more explicit notation
+```json
+"x2c": {
+    "enable": <value>
+}
+```
+where `<value>` is the boolean passed to `x2c`.
+
+If `x2c` is specified as a nested JSON object, the following options are available:
+| **Name** | **Description** | **Type** | **Default** |
+| -------- | --------------- | -------- | ----------- |
+| `enable` | Whether to enable X2C | Boolean | `false` |
+| `local_approx` | Whether to use the local approximation (DLU) for the decoupling | Boolean | `true` |
+| `picture_change_corr` | Whether to enable a picture-change-correction for expectation values | Boolean  | `true` |
 
 
 ### generic

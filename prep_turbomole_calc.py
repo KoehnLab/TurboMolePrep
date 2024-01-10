@@ -28,6 +28,7 @@ molecule_options = {
     },
 }
 basis_set_options = {default_key: str, "use_ecp": bool}
+x2c_options = {"enable": bool, "local_approx": bool, "picture_change_corr": bool}
 
 param_types = {
     "title": str,
@@ -38,7 +39,7 @@ param_types = {
         "dft": [str, dft_params],
         "finite_nucleus": bool,
         "max_scf_iterations": int,
-        "x2c": [bool, {"dlu": bool}],
+        "x2c": [bool, x2c_options],
         "generic": {array_type_key: str},
         "ri": [str, {"type": str, "multipole_acceleration": bool}],
     },
@@ -382,7 +383,6 @@ def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None)
 
 named_calc_params = {
     "max_scf_iterations": ["scf > iter > {}"],
-    "x2c": ["scf > x2c > {}"],
 }
 
 
@@ -525,6 +525,36 @@ def configure_ri_parameters(process: pexpect.spawn, params: Dict[str, Any]):
         process.sendline("")
 
 
+def configure_x2c_parameter(process: pexpect.spawn, params: Dict[str, Any]):
+    if not params.get("enable", False):
+        return
+
+    scf_submenu = r"ENTER SCF-OPTION TO BE MODIFIED"
+    x2c_question = r"Do you want to switch X2C on\?"
+    rlocal_question = r"Do you want to switch rlocal on\?"
+    pcc_question = r"Do you want to switch pcc on\?"
+
+    # Enable X2C
+    process.sendline("scf")
+    process.expect(scf_submenu)
+    process.sendline("x2c")
+    process.expect(x2c_question)
+    process.sendline("y")
+    process.expect(scf_submenu)
+
+    if params.get("local_approx", True):
+        process.sendline("rlocal")
+        process.expect(rlocal_question)
+        process.sendline("y")
+        process.expect(scf_submenu)
+
+    if params.get("picture_change_corr", True):
+        process.sendline("pcc")
+        process.expect(pcc_question)
+        process.sendline("y")
+        process.expect(scf_submenu)
+
+
 def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"GENERAL MENU : SELECT YOUR TOPIC"
     end_of_prompt = r"\* or q\s*: END OF DEFINE SESSION"
@@ -565,7 +595,7 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
             process.sendline("scf")
             process.expect(scf_submenu)
             process.sendline("finnuc")
-            process.expect("Do you want to switch finnuc on?")
+            process.expect("Do you want to switch finnuc on\?")
             if calc_params[current]:
                 process.sendline("y")
                 process.expect("Finite nucleus model selected")
@@ -574,6 +604,8 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
             # Leave SCF menu again
             process.sendline("")
             process.expect(headline)
+        elif current == "x2c":
+            configure_x2c_parameter(process, params=calc_params[current])
         else:
             raise RuntimeError(
                 "Unknown calculation option - should have been caught during parameter validation"
@@ -725,6 +757,8 @@ def expand_param_shortcuts(params: Dict[str, Any]) -> Dict[str, Any]:
             calc_options["dft"] = {"functional": calc_options["dft"]}
         if "ri" in calc_options and type(calc_options["ri"]) is str:
             calc_options["ri"] = {"type": calc_options["ri"]}
+        if "x2c" in calc_options and type(calc_options["x2c"]) is bool:
+            calc_options["x2c"] = {"enable": calc_options["x2c"]}
 
     return params
 

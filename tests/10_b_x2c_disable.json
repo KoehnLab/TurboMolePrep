@@ -1,0 +1,10 @@
+{
+	"molecule": "geometry.xyz",
+	"calculation": {
+		"x2c": {
+			"enable": false,
+			"local_approx": true,
+			"picture_change_corr": true
+		}
+	}
+}
