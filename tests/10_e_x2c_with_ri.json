@@ -1,0 +1,7 @@
+{
+	"molecule": "geometry.xyz",
+	"calculation": {
+		"x2c": true,
+		"ri": "Coulomb"
+	}
+}

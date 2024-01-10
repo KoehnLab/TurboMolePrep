@@ -554,6 +554,9 @@ def configure_x2c_parameter(process: pexpect.spawn, params: Dict[str, Any]):
         process.sendline("y")
         process.expect(scf_submenu)
 
+    # Exit SCF menu
+    process.sendline("")
+
 
 def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"GENERAL MENU : SELECT YOUR TOPIC"
