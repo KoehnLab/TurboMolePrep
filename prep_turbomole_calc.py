@@ -598,7 +598,7 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
             process.sendline("scf")
             process.expect(scf_submenu)
             process.sendline("finnuc")
-            process.expect("Do you want to switch finnuc on\?")
+            process.expect(r"Do you want to switch finnuc on\?")
             if calc_params[current]:
                 process.sendline("y")
                 process.expect("Finite nucleus model selected")
