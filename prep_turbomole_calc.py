@@ -187,16 +187,17 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
 
     process.expect(end_of_prompt)
 
+    if params["molecule"].get("detect_symmetry", True):
+        process.sendline("desy 0.1")
+        process.expect(headline)
+        sym = process.match.group(2).decode("utf-8")
+        print("Detected symmetry: {}".format(sym))
+        process.expect(end_of_prompt)
+
     use_interals = params["molecule"].get("use_internal_coords", True)
 
     if use_interals:
         process.sendline("ired")
-        process.expect(end_of_prompt)
-    if params["molecule"].get("detect_symmetry", True):
-        process.sendline("desy")
-        process.expect(headline)
-        sym = process.match.group(2).decode("utf-8")
-        print("Detected symmetry: {}".format(sym))
         process.expect(end_of_prompt)
 
     process.sendline("*")
