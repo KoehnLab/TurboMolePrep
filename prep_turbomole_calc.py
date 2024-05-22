@@ -46,6 +46,21 @@ param_types = {
 }
 
 
+def optional_match_group(process: pexpect.spawn, group: int) -> Optional[str]:
+    match = process.match.group(group)  # type: ignore
+
+    if match is not None and type(match) is bytes:
+        match = match.decode("utf-8")
+
+    return match
+
+
+def match_group(process: pexpect.spawn, group: int) -> str:
+    match = optional_match_group(process, group)
+    assert match is not None
+    return match
+
+
 def validate_parameter(
     params: Dict[str, Any], sub_level: Optional[str] = None, scheme=param_types
 ):
@@ -177,7 +192,7 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
     process.sendline("a {}".format(params["molecule"]["geometry"]))
 
     process.expect(headline)
-    nAtoms = int(process.match.group(1))
+    nAtoms = int(match_group(process, 1))
     if nAtoms == 0:
         raise RuntimeError(
             "Failed at adding geometry '{}': no atoms were added".format(
@@ -190,7 +205,7 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
     if params["molecule"].get("detect_symmetry", True):
         process.sendline("desy 0.1")
         process.expect(headline)
-        sym = process.match.group(2).decode("utf-8")
+        sym = match_group(process, 2)
         print("Detected symmetry: {}".format(sym))
         process.expect(end_of_prompt)
 
@@ -253,8 +268,8 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
             process.sendline("b {} {}".format(group, basis_set))
             idx = process.expect([basis_set_not_found, end_of_prompt])
             if idx == 0:
-                basis_set_nick = process.match.group(2).decode("utf-8").strip()
-                basis_set_file = process.match.group(1).decode("utf-8").strip()
+                basis_set_nick = match_group(process, 2).strip()
+                basis_set_file = match_group(process, 1).strip()
                 raise RuntimeError(
                     "Invalid basis '{}' - check '{}' for available basis sets".format(
                         basis_set_nick, basis_set_file
@@ -264,15 +279,15 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
         if not basis_info.get("use_ecp", True):
             process.sendline("ecprm all")
             process.expect(headline)
-            nECPs = int(process.match.group(3))
+            nECPs = int(match_group(process, 3))
             if nECPs != 0:
                 raise RuntimeError("Failed at removing ECPs")
             process.expect(end_of_prompt)
 
         process.sendline("")
         process.expect(headline)
-        nAtoms = int(process.match.group(1))
-        nBasisSets = int(process.match.group(2))
+        nAtoms = int(match_group(process, 1))
+        nBasisSets = int(match_group(process, 2))
 
         if nAtoms > nBasisSets:
             raise RuntimeError("Not all atoms have an associated basis set")
@@ -400,7 +415,7 @@ def configure_dft_parameter(process: pexpect.spawn, params: Dict[str, Any]):
     # Enable DFT
     process.sendline("on")
     process.expect(summary)
-    if process.match.group(1) is not None:
+    if optional_match_group(process, 1) is not None:
         raise RuntimeError("Enabling DFT failed")
 
     for key in params:
@@ -416,7 +431,7 @@ def configure_dft_parameter(process: pexpect.spawn, params: Dict[str, Any]):
                 )
 
             assert idx == 1
-            active_functional = process.match.group(2).decode("utf-8")
+            active_functional = match_group(process, 2)
             if active_functional.lower() != params[key].lower():
                 raise RuntimeError(
                     "Tried to use DFT functional '{}', but define selected '{}' instead".format(
@@ -437,7 +452,7 @@ def configure_dft_parameter(process: pexpect.spawn, params: Dict[str, Any]):
                 )
 
             assert idx == 1
-            active_grid = process.match.group(3).decode("utf-8")
+            active_grid = match_group(process, 3)
             if active_grid.lower() != params[key].lower():
                 raise RuntimeError(
                     "Tried to use DFT grid '{}', but define selected '{}' instead".format(
@@ -453,14 +468,14 @@ def configure_dft_parameter(process: pexpect.spawn, params: Dict[str, Any]):
             process.sendline(params[key])
             process.expect(disp_corr)
 
-            active = process.match.group(2) is None
+            active = optional_match_group(process, 2) is None
             if not active:
                 raise RuntimeError("Failed at activating dispersion correction")
 
-            method = process.match.group(1)
+            method = optional_match_group(process, 1)
             if method is None:
                 raise RuntimeError("Unable to extract dispersion correction method")
-            method = method.decode("utf-8")
+            method = method
             print("Enabled '{}' dispersion correction".format(method))
 
             # Leave submenu and re-enter dft menu
@@ -473,9 +488,9 @@ def configure_dft_parameter(process: pexpect.spawn, params: Dict[str, Any]):
             )
 
     # The last thing that has been matched has been the summary (across all code paths)
-    dft_active = process.match.group(1) is None
-    functional = process.match.group(2).decode("utf-8")
-    grid = process.match.group(3).decode("utf-8")
+    dft_active = optional_match_group(process, 1) is None
+    functional = match_group(process, 2)
+    grid = match_group(process, 3)
 
     if not dft_active:
         raise RuntimeError("DFT activation has failed")
@@ -509,7 +524,7 @@ def configure_ri_parameters(process: pexpect.spawn, params: Dict[str, Any]):
     process.sendline("on")
     process.expect(ri_headline)
 
-    ri_active = process.match.group(1) is None
+    ri_active = optional_match_group(process, 1) is None
 
     if not ri_active:
         raise RuntimeError("Failed to enable RI (type: '{}')".format(ri_type))
