@@ -386,6 +386,8 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
 
 
 def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None):
+    if not instruction.strip().endswith("*"):
+        print("Warning: Some submenus in define have to be exited via '*' - in case of errors, try '*'s in your generic command")
     parts = instruction.split(">")
     parts = [x.strip() for x in parts]
     for currentPart in parts:
