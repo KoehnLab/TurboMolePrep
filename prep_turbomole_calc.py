@@ -387,7 +387,10 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
 
 def set_generic_calc_param(process: pexpect.spawn, instruction: str, value=None):
     if not instruction.strip().endswith("*"):
-        print("Warning: Some submenus in define have to be exited via '*' - in case of errors, try '*'s in your generic command")
+        print(
+            "Warning: Some submenus in define have to be exited via '*' "
+            + "- in case of errors, try '*'s in your generic command"
+        )
     parts = instruction.split(">")
     parts = [x.strip() for x in parts]
     for currentPart in parts:
@@ -647,6 +650,12 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
 
 
 def run_define(params: Dict[str, Any], debug: bool = False, timeout: int = 10):
+    if os.path.exists("control") or os.path.exists("tmp.input"):
+        raise RuntimeError(
+            "prep_turbomole_calc can't be used in a directory where remnants of a prior define run are located "
+            + "- delete all old files or use a different directory"
+        )
+
     process = pexpect.spawn("define")
     process.timeout = timeout
     if debug:
