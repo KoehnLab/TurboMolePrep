@@ -227,11 +227,17 @@ scf > conv > 8
 ```
 sets the convergence threshold for SCF calculations to $10^{-8}$.
 
+**Important**: The implementation of generic commands relies on being able to exit all submenus by simply pressing Enter without having typed any
+text. This is required to come back up to the main menu of define. However, a small-ish subset of menus in define **don't work like that**. Instead,
+they have to be explicitly exited by typing in a star (`*`). In such cases, the star(s) required to come back up to the main menu (or at least to a
+menu from where just pressing Enter a bunch of times will lead back to the main menu) have to be part of your command.
+
 Example:
 ```json
 "generic": [
     "scf > conv > 8",
-    "dsp > d4"
+    "dsp > d4",
+    "cc > denconv > 1d-9 > *"
 ]
 ```
 
