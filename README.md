@@ -189,6 +189,28 @@ keywords and their effect are (case-insensitive and space-insensitive)
 - `Coulomb + Exchange`: Coulomb \& Exchange
 
 
+#### cosmo
+
+If the `cosmo` keyword is found, the cosmoprep module will be called (after define). The minimal set up is:
+```json
+"cosmo": true
+```
+This will set the dielectric constant to `Infinity` and select the standard cavity setup. More detailed setup is possible in the following way:
+```json
+"cosmo": {
+   "epsilon": 2.2,
+   "gauss": true,
+   "nleb":  3
+}
+```
+
+Presently supported:
+| **Name** | **Description** | **Type** | **Default** |
+| -------- | --------------- | -------- | ----------- |
+| `epsilon` | Dielectric constant | `Float` or `String` | `Infinity` |
+| `gauss` | Use Gaussian charge model (TM >=7.9) | `Bool`| `false`|
+| `nleb`  | Lebedev grid for Gaussian charge model | `Int` | 3 |
+
 #### x2c
 
 If the value of the `x2c` option is a boolean, it is a shorthand for for the following, more explicit notation
