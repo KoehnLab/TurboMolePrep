@@ -24,8 +24,13 @@ molecule_options = {
     "detect_symmetry": bool,
     "charge": int,
     "isotopes": {
-        default_key: [int, {"nucleon_count": int, "gyromagnetic_ratio": float}]
+        default_key: [int, {"nucleon_count": int, "gyromagnetic_ratio": float, "quadrupole": float}]
     },
+}
+cosmo_options = {
+    "gauss": bool,
+    "nleb": int,
+    "epsilon": float
 }
 basis_set_options = {default_key: str, "use_ecp": bool}
 x2c_options = {"enable": bool, "local_approx": bool, "picture_change_corr": bool}
@@ -37,6 +42,7 @@ param_types = {
     "basis_set": [str, basis_set_options],
     "calculation": {
         "dft": [str, dft_params],
+        "cosmo": [str, cosmo_options],
         "finite_nucleus": bool,
         "max_scf_iterations": int,
         "x2c": [bool, x2c_options],
@@ -238,6 +244,7 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
     basis_set_not_found = r"THERE ARE NO DATA SETS CATALOGUED IN FILE\s*\r\n(.+)\r\n\s*CORRESPONDING TO NICKNAME\s*([^\n]+)\r\n"
     isotope_header = r"ENTER A SET OF ATOMS TO WHICH YOU WANT TO ASSIGN ISOTOPES"
     isotope_no_gyrmag = r"NO GYROMAGNETIC RATIO WAS FOUND IN THE DATABASE"
+    isotope_no_quadru = r"NO NUCLEAR QUADRUPOLE MOMENT WAS FOUND IN THE DATABASE"
     isotope_assigned = r"SUPPLYING ISOTOPES TO"
 
     process.expect(headline)
@@ -305,6 +312,9 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
             gyromagnetic_ratio = params["molecule"]["isotopes"][element].get(
                 "gyromagnetic_ratio", None
             )
+            quadrupole_moment = params["molecule"]["isotopes"][element].get(
+                    "quadrupole", None
+            )
 
             process.sendline('"{}" {}'.format(element.lower(), nucleon_count))
             process.expect(isotope_assigned)
@@ -329,10 +339,32 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
                         )
                     )
 
+            index = process.expect([isotope_no_quadru, pexpect.TIMEOUT], timeout=1)
+
+            if index == 0:
+                if quadrupole_moment is None:
+                    process.sendline("")
+                    print(
+                        "Unknown or zero quadrupole for {}{} - ignoring".format(
+                            nucleon_count, element
+                        )
+                    )
+                else:
+                    process.sendline(str(quadrupole_moment))
+            else:
+                assert index == 1
+                if quadrupole_moment is not None:
+                    raise RuntimeError(
+                        "Define doesn't allow assignment of quadrupole moment for {}{}".format(
+                            nucleon_count, element
+                        )
+                    )
+
             # Re-enter isotope assignment menu
             process.sendline("iso")
 
         # Exit isotope menu
+        print("at end")
         process.sendline("")
         process.expect(end_of_prompt)
 
@@ -630,6 +662,9 @@ def configure_calc_params(process: pexpect.spawn, params: Dict[str, Any]):
             process.expect(headline)
         elif current == "x2c":
             configure_x2c_parameter(process, params=calc_params[current])
+        elif current == "cosmo":
+            # ignore here
+            continue
         else:
             raise RuntimeError(
                 "Unknown calculation option - should have been caught during parameter validation"
@@ -666,6 +701,101 @@ def run_define(params: Dict[str, Any], debug: bool = False, timeout: int = 10):
     configure_basis_set(process, params)
     configure_occupation(process, params)
     configure_calc_params(process, params)
+
+
+def configure_cosmo(process: pexpect.spawn, params: Dict[str, Any]):
+
+    ignore1_prompt = r"default, type"
+    ignore2_prompt = r"(nppa|nspa|disex|rsolv|routf|cavity|amat) = "
+    ghost_prompt = r"GOSTSHYP"
+    epsilon_prompt = r"epsilon = infinity \(default\)"
+    refind_prompt = r"refind = none \(default\)"
+    gauss_prompt = r"Gaussian charge model \+ Lebedev grid\? \(default = no\)"
+    lebedev_prompt = r"Lebedev grid = \s* 3"
+    radius_menu = r"radius definition menu"
+    ignore3_prompt = r"COSMO output file is"
+    ignore4_prompt = r"Do you want to make a correlated"
+    all_done = "cosmoprep : all done"
+
+    calc_params = params["calculation"]
+    cosmo_params = calc_params["cosmo"]
+
+    cont = True
+    rad_done = False
+    while cont:
+        idx = process.expect(
+                [
+                    ignore1_prompt,
+                    ignore2_prompt,
+                    ghost_prompt,
+                    epsilon_prompt,
+                    refind_prompt,
+                    gauss_prompt,
+                    lebedev_prompt,
+                    radius_menu,
+                    ignore3_prompt,
+                    ignore4_prompt,
+                    all_done
+                ]
+            )
+        if idx == 0 or idx == 1 or idx == 2 or idx == 8 or idx == 9:
+            process.sendline("")
+
+        if idx == 3:
+            if "epsilon" in cosmo_params:
+                 process.sendline(f"{cosmo_params['epsilon']}")
+            else:
+                process.sendline("")
+
+        elif idx == 4:
+            if "refind" in cosmo_params:
+                process.sendline(f"{cosmo_params['refind']}")
+            else:
+                process.sendline("")
+
+        elif idx == 5:
+            if "gauss" in cosmo_params:
+                if cosmo_params["gauss"]:
+                    process.sendline("yes")
+                else:
+                    process.sendline("no")
+            else:
+                process.sendline("no")
+
+        elif idx == 6:
+            if "nleb" in cosmo_params:
+                process.sendline(f"{cosmo_params['nleb']}")
+            else:
+                process.sendline("")
+
+        elif idx == 7:
+            if rad_done:
+                process.sendline("*")
+            else:
+                process.sendline("r all b")
+                rad_done = True
+
+        elif idx == 10:
+            cont = False
+
+
+
+def run_cosmoprep(params: Dict[str, Any], debug: bool = False, timeout: int = 10):
+    
+    if not "calculation" in params:
+        return
+
+    calc_params = params["calculation"]
+    if not "cosmo" in calc_params:
+        return
+
+    print("setting up cosmo ...")
+    process = pexpect.spawn("cosmoprep")
+    process.timeout = timeout
+    if debug:
+        process.logfile = sys.stdout.buffer
+
+    configure_cosmo(process, params)
 
 
 def handle_geometry_conversion(geom_path: str, base_path: str) -> str:
@@ -856,6 +986,7 @@ def main():
     validate_parameter(params=parameter)
 
     run_define(parameter, debug=args.debug, timeout=args.timeout)
+    run_cosmoprep(parameter, debug=args.debug, timeout=args.timeout)
 
 
 if __name__ == "__main__":

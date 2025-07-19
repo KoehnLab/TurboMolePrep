@@ -1,0 +1,10 @@
+{
+	"molecule": "geometry.xyz",
+	"calculation": {
+		"cosmo": {
+			"gauss": true,
+			"nleb":  4,
+			"epsilon": 2.2
+		}
+	}
+}
