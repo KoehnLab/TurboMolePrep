@@ -28,9 +28,10 @@ molecule_options = {
     },
 }
 cosmo_options = {
+    "enable": bool,
     "gauss": bool,
     "nleb": int,
-    "epsilon": float
+    "epsilon": [float, str]
 }
 basis_set_options = {default_key: str, "use_ecp": bool}
 x2c_options = {"enable": bool, "local_approx": bool, "picture_change_corr": bool}
@@ -42,7 +43,7 @@ param_types = {
     "basis_set": [str, basis_set_options],
     "calculation": {
         "dft": [str, dft_params],
-        "cosmo": [str, cosmo_options],
+        "cosmo": [bool, cosmo_options],
         "finite_nucleus": bool,
         "max_scf_iterations": int,
         "x2c": [bool, x2c_options],
@@ -743,7 +744,12 @@ def configure_cosmo(process: pexpect.spawn, params: Dict[str, Any]):
 
         if idx == 3:
             if "epsilon" in cosmo_params:
-                 process.sendline(f"{cosmo_params['epsilon']}")
+                if type(cosmo_params['epsilon']) is str:
+                    if cosmo_params['epsilon'].upper() not in ["INF","INFINITY"]:
+                        raise RuntimeError(
+                                f"epsilon must either be a number or a string 'INF' or 'INFINITY' (upper or lower case); found {cosmo_params['epsilon']}"
+                                )
+                process.sendline(f"{cosmo_params['epsilon']}")
             else:
                 process.sendline("")
 
@@ -787,6 +793,9 @@ def run_cosmoprep(params: Dict[str, Any], debug: bool = False, timeout: int = 10
 
     calc_params = params["calculation"]
     if not "cosmo" in calc_params:
+        return
+
+    if not calc_params["cosmo"]["enable"]:
         return
 
     print("setting up cosmo ...")
@@ -919,6 +928,10 @@ def expand_param_shortcuts(params: Dict[str, Any]) -> Dict[str, Any]:
             calc_options["ri"] = {"type": calc_options["ri"]}
         if "x2c" in calc_options and type(calc_options["x2c"]) is bool:
             calc_options["x2c"] = {"enable": calc_options["x2c"]}
+        if "cosmo" in calc_options and type(calc_options["cosmo"]) is bool:
+            calc_options["cosmo"] = {"enable": calc_options["cosmo"]}
+        if "cosmo" in calc_options and "enable" not in calc_options["cosmo"]:
+            calc_options["cosmo"]["enable"] = True
 
     return params
 

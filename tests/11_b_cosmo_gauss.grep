@@ -1,3 +1,4 @@
 ^$cosmo
 ^[[:space:]]*gauss
 ^[[:space:]]*epsilon[[:space:]]*=[[:space:]]*2\.2
+^[[:space:]]*nleb[[:space:]]*=[[:space:]]*4

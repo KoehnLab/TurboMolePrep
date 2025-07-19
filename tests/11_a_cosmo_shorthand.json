@@ -1,6 +1,6 @@
 {
 	"molecule": "geometry.xyz",
 	"calculation": {
-		"cosmo": {}
+		"cosmo": true
 	}
 }
