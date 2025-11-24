@@ -233,7 +233,7 @@ If `x2c` is specified as a nested JSON object, the following options are availab
 
 If the `pop_analysis` option is set, the stated method will be performed. The minimal set up is:
 ```json
-"pop_analysis": True
+"pop_analysis": true
 ```
 This will set the method `all`. Due to the implementation of TurboMole, `all` doesn't contain the method `wbi` (wiberg), which has to be set manually. 
 ```json
