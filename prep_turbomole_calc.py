@@ -623,7 +623,7 @@ def configure_pop_parameter(process: pexpect.spawn, params: Dict[str, Any]):
     if not params.get("enable", False):
         return
 
-    pop_method: str = params.get("method", "nbo").lower().replace(" ", "")
+    pop_method: str = params.get("method", "all").lower().replace(" ", "")
 
     prop_submenu = r"CURRENT STATUS OF PROPERTY KEYWORDS:"
     pop_question = r"THIS OPTION CURRENTLY IS SWITCHED OFF\s*DO YOU WANT TO SWITCH IT ON \(y\/n\)\?"
@@ -969,6 +969,8 @@ def expand_param_shortcuts(params: Dict[str, Any]) -> Dict[str, Any]:
             calc_options["x2c"] = {"enable": calc_options["x2c"]}
         if "pop_analysis" in calc_options and type(calc_options["pop_analysis"]) is bool:
             calc_options["pop_analysis"] = {"enable": calc_options["pop_analysis"]}
+        if "pop_analysis" in calc_options and "enable" not in calc_options["pop_analysis"]:
+            calc_options["pop_analysis"]["enable"] = True
         if "cosmo" in calc_options and type(calc_options["cosmo"]) is bool:
             calc_options["cosmo"] = {"enable": calc_options["cosmo"]}
         if "cosmo" in calc_options and "enable" not in calc_options["cosmo"]:
