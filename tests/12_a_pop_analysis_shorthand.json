@@ -1,8 +1,6 @@
 {
 	"molecule": "geometry.xyz",
 	"calculation": {
-		"pop_analysis": {
-			"enable": true
-		}
+		"pop_analysis": true
 	}
 }
