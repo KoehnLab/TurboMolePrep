@@ -248,7 +248,7 @@ If `pop_analysis` is specified as a nested JSON object, the following options ar
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
 | `enable` | Whether to enable population analysis | `Boolean` | `false` |
-| `method` | Certain method for the population analysis (PA), availabe are Mulliken PA `mul`, Loewdin PA `low`, natural PA `nbo`, PA basen on occupation numbers `pab`, Wiberg bond indices `wbi` and all of the beforementioned methods `all` | `String` | `nbo` |
+| `method` | Certain method for the population analysis (PA), availabe are Mulliken PA `mul`, Loewdin PA `low`, natural PA `nbo`, PA basen on occupation numbers `pab`, Wiberg bond indices `wbi` and all of the beforementioned methods `all` | `String` | `all` |
 
 
 ### generic
