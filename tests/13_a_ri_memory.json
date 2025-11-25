@@ -1,0 +1,9 @@
+{
+	"molecule": "geometry.xyz",
+	"calculation": {
+		"ri": {
+			"type": "ri",
+			"memory": 3141
+		}
+	}
+}

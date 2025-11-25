@@ -1,0 +1,9 @@
+{
+	"molecule": "geometry.xyz",
+	"calculation": {
+		"pop_analysis": {
+			"enable": true,
+			"method": "all"
+		}
+	}
+}
