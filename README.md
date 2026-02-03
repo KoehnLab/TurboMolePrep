@@ -209,7 +209,7 @@ Presently supported:
 | **Name** | **Description** | **Type** | **Default** |
 | -------- | --------------- | -------- | ----------- |
 | `epsilon` | Dielectric constant | `Float` or `String` | `Infinity` |
-| `gauss` | Use Gaussian charge model (TM >=7.9) | `Bool`| `false`|
+| `gauss` | Use Gaussian charge model (TM >=7.9) | `Bool`| `true`|
 | `nleb`  | Lebedev grid for Gaussian charge model | `Int` | TurboMole's default |
 
 #### x2c

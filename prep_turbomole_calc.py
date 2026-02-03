@@ -799,11 +799,8 @@ def configure_cosmo(process: pexpect.spawn, params: Dict[str, Any]):
                 process.sendline("")
 
         elif idx == 5:
-            if "gauss" in cosmo_params:
-                if cosmo_params["gauss"]:
-                    process.sendline("yes")
-                else:
-                    process.sendline("no")
+            if cosmo_params.get("gauss", True):
+                process.sendline("yes")
             else:
                 process.sendline("no")
 
