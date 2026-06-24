@@ -1,0 +1,7 @@
+{
+	"molecule": {
+		"geometry": "atom.xyz",
+		"detect_symmetry": false,
+		"use_internal_coords": false
+	}
+}

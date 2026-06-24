@@ -195,6 +195,7 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
     internal_coord_prompt = (
         r"IF YOU DO NOT WANT TO USE INTERNAL COORDINATES ENTER\s*no\r\n"
     )
+    next_menu = r"GOBACK=& \(TO GEOMETRY MENU !\)\r\n"
 
     process.expect(headline)
     process.expect(end_of_prompt)
@@ -228,8 +229,13 @@ def configure_geometry(process: pexpect.spawn, params: Dict[str, Any]):
 
     if not use_internals:
         # Confirm that we indeed do not want internal coordinates
-        process.expect(internal_coord_prompt)
-        process.sendline("no")
+        # (will not be asked, if only 1 atom was defined)
+        idx = process.expect([internal_coord_prompt,next_menu])
+        if idx==0:
+            process.sendline("no")
+        if idx==1:
+            process.sendline("")
+                 
 
 
 def basis_set_group_sort_key(expr: str) -> str:
