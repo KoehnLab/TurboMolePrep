@@ -375,8 +375,10 @@ def configure_basis_set(process: pexpect.spawn, params: Dict[str, Any]):
 def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
     headline = r"OCCUPATION NUMBER & MOLECULAR ORBITAL DEFINITION MENU"
     end_of_prompt = r"FOR EXPLANATIONS APPEND A QUESTION MARK \(\?\) TO ANY COMMAND"
-    default_prompt = r"DO YOU WANT THE DEFAULT.+\r\n|DO YOU WANT THESE\s*?.+\r\n"
+    default_prompt = r"DO YOU WANT THE DEFAULT PARA.+\r\n|DO YOU WANT THESE\s*?.+\r\n"
     charge_prompt = r"ENTER THE MOLECULAR CHARGE.+\r\n"
+    atom_charge_prompt = r"ENTER THE ATOMIC CHARGE.+\r\n"
+    atom_default_prompt = r"DO YOU WANT THE DEFAULT OCCUPATION.+\r\n"
     occupation_prompt = r"DO YOU ACCEPT THIS OCCUPATION\s*\?"
     nat_orb_prompt = r"DO YOU REALLY WANT TO WRITE OUT NATURAL ORBITALS\s\?.+\r\n"
     next_menu_headline = r"GENERAL MENU : SELECT YOUR TOPIC"
@@ -392,7 +394,9 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
             [
                 default_prompt,
                 charge_prompt,
+                atom_charge_prompt,
                 occupation_prompt,
+                atom_default_prompt,
                 nat_orb_prompt,
                 next_menu_headline,
             ]
@@ -403,13 +407,18 @@ def configure_occupation(process: pexpect.spawn, params: Dict[str, Any]):
         elif idx == 1:
             process.sendline("{}".format(params["molecule"].get("charge", 0)))
         elif idx == 2:
+            process.sendline("{}".format(params["molecule"].get("charge", 0)))
+        elif idx == 3:
             # Always accept the produced occupation
             process.sendline("y")
-        elif idx == 3:
+        elif idx == 4:
+            # Always decline the default occupations for atoms
+            process.sendline("n")
+        elif idx == 5:
             process.sendline(
                 "{}".format("y" if params.get("write_natural_orbitals", False) else "n")
             )
-        elif idx == 4:
+        elif idx == 6:
             # We ended up in the next menu -> press enter to make the menu "re-render"
             # such that the following code can detect it properly
             process.sendline("")
